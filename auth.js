@@ -5,7 +5,9 @@ const bcrypt = require('bcryptjs');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const db = new sqlite3.Database(path.join(__dirname, 'users.db'));
+const isVercel = process.env.VERCEL === '1';
+const dbPath = isVercel ? '/tmp/users.db' : path.join(__dirname, 'users.db');
+const db = new sqlite3.Database(dbPath);
 
 // Initialize Database
 db.serialize(() => {
@@ -34,7 +36,7 @@ passport.use(new LocalStrategy({ usernameField: 'email' }, (email, password, don
         if (err) return done(err);
         if (!user) return done(null, false, { message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง (Incorrect email or password)' });
         if (!user.password) return done(null, false, { message: 'กรุณาเข้าสู่ระบบด้วย Google (Please login with Google)' });
-        
+
         bcrypt.compare(password, user.password, (err, isMatch) => {
             if (err) return done(err);
             if (isMatch) return done(null, user);
@@ -57,7 +59,7 @@ passport.use(new GoogleStrategy({
             }
             return done(null, user);
         } else {
-            db.run('INSERT INTO users (email, google_id, name) VALUES (?, ?, ?)', [email, profile.id, profile.displayName], function(err) {
+            db.run('INSERT INTO users (email, google_id, name) VALUES (?, ?, ?)', [email, profile.id, profile.displayName], function (err) {
                 if (err) return done(err);
                 db.get('SELECT * FROM users WHERE id = ?', [this.lastID], (err, newUser) => {
                     return done(err, newUser);
@@ -71,10 +73,10 @@ function setupAuth(app) {
     app.post('/register', (req, res) => {
         const { email, password, name } = req.body;
         if (!email || !password) return res.status(400).json({ error: 'Missing email or password' });
-        
+
         bcrypt.hash(password, 10, (err, hash) => {
             if (err) return res.status(500).json({ error: 'Server error' });
-            db.run('INSERT INTO users (email, password, name) VALUES (?, ?, ?)', [email, hash, name], function(err) {
+            db.run('INSERT INTO users (email, password, name) VALUES (?, ?, ?)', [email, hash, name], function (err) {
                 if (err) return res.status(400).json({ error: 'อีเมลนี้ถูกใช้งานแล้ว (Email already exists)' });
                 res.json({ success: true });
             });
