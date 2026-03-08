@@ -1,0 +1,12 @@
+{
+  "filePath": "c:\\Users\\HP\\Documents\\AI Project\\CNC Costify AI\\Cost Data.xlsx",
+  "headers": [
+    "Timestamp","Workpiece","Material","Weight","Stock Size","Material Cost",
+    "Coating","Coating Cost","Grinding","Grinding Cost","Wire Cut","Wire Cut Cost",
+    "CNC+Process","Workpiece Price","Price Note","Condition Note"
+  ],
+  "row": [
+    "2025-10-08 11:00","Demo-Part","POM","1.23 kg","⌀20 x 105 mm",1234.56,
+    "HRC60",200,"Flat",150,"EDM",300,2500,5000,"Include Mat","Include Sandblast"
+  ]
+}

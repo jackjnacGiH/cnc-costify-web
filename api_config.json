@@ -1,0 +1,11 @@
+{
+  "provider": "gpt",
+  "openai": {
+    "api_key": "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",
+    "model": "gpt-3.5-turbo"
+  },
+  "gemini": {
+    "api_key": "AIzaSyA6LunPhclVtE_OjbJBkIgVpglCRC5Mzm0",
+    "model": "gemini-2.0-flash-lite"
+  }
+}

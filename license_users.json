@@ -1,0 +1,8 @@
+[
+  { "id": "U1001", "name": "สมชาย ใจดี", "email": "somchai@example.com", "role": "Operator", "licenseType": "Basic", "status": "active", "expiresAt": "2026-01-01", "permissions": ["estimate:view"] },
+  { "id": "U1002", "name": "Alice Tan", "email": "alice.tan@example.com", "role": "Engineer", "licenseType": "Pro", "status": "grace", "expiresAt": "2025-12-01", "permissions": ["estimate:view", "estimate:edit"] },
+  { "id": "U1003", "name": "Boonmee S.", "email": "boonmee@example.com", "role": "Admin", "licenseType": "Enterprise", "status": "revoked", "expiresAt": "2024-08-01", "permissions": ["admin:all"] },
+  { "id": "U1004", "name": "John Nguyen", "email": "john.nguyen@example.com", "role": "QA", "licenseType": "Basic", "status": "expired", "expiresAt": "2025-05-01", "permissions": ["estimate:view"] },
+  { "id": "U1005", "name": "Rina K.", "email": "rina.k@example.com", "role": "Planner", "licenseType": "Pro", "status": "active", "expiresAt": "2027-03-15", "permissions": ["estimate:view", "reports:view"] },
+  { "id": "U1006", "name": "ทศพล ใสสว่าง", "email": "tosapol@example.com", "role": "Supervisor", "licenseType": "Pro", "status": "active", "expiresAt": "2026-06-30", "permissions": ["estimate:view", "estimate:edit", "reports:view"] }
+]

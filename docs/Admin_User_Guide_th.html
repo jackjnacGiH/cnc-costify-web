@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>คู่มือการใช้งาน CNC Costify AI Admin</title>
+  <style>
+    :root {
+      --primary: #3b82f6; /* align with Admin UI blue-500 */
+      --accent: #22c55e;  /* align with Admin UI green-500 */
+      --bg: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --code: #0f172a;
+    }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: "Segoe UI", Tahoma, sans-serif; }
+    .container { max-width: 980px; margin: 32px auto; padding: 0 16px; }
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    header h1 { font-size: 24px; margin: 0; color: var(--primary); }
+    header .meta { font-size: 12px; color: var(--muted); }
+    nav.toc { border: 1px solid var(--border); border-radius: 10px; padding: 16px; background: #f8fafc; }
+    nav.toc h2 { font-size: 16px; margin: 0 0 8px; color: var(--primary); }
+    nav.toc ul { list-style: none; padding: 0; margin: 0; columns: 2; column-gap: 24px; }
+    nav.toc li { margin: 6px 0; }
+    nav.toc a { text-decoration: none; color: var(--text); }
+    nav.toc a:hover { color: var(--primary); }
+    section { margin-top: 28px; }
+    section h2 { font-size: 18px; margin: 0 0 12px; color: var(--primary); border-bottom: 2px solid var(--border); padding-bottom: 6px; }
+    section h3 { font-size: 16px; margin: 18px 0 8px; color: var(--text); }
+    .card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: #ffffff; }
+    .figure { margin: 16px 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #ffffff; }
+    .figure img { width: 100%; display: block; }
+    .figure figcaption { padding: 10px 12px; font-size: 12px; color: var(--muted); background: #f9fafb; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .badge { display: inline-block; background: var(--accent); color: white; padding: 2px 8px; border-radius: 999px; font-size: 12px; margin-left: 8px; }
+    .kbd { display: inline-block; background: #111827; color: #fff; border-radius: 6px; padding: 2px 8px; font-size: 12px; }
+    .muted { color: var(--muted); }
+    footer { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+    .index { columns: 3; column-gap: 24px; }
+    .index a { display: block; text-decoration: none; color: var(--text); margin: 6px 0; }
+    .index a:hover { color: var(--primary); }
+    .steps ol { margin: 0; padding-left: 20px; }
+    .callout { border-left: 4px solid var(--accent); background: #ecfeff; padding: 12px; border-radius: 8px; margin: 12px 0; }
+    .code { background: #0f172a; color: #e5e7eb; padding: 8px 12px; border-radius: 8px; font-family: Consolas, monospace; font-size: 13px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>
+        คู่มือการใช้งาน CNC Costify AI Admin
+        <span class="badge">ตัวอย่างหน้า HTML</span>
+      </h1>
+      <div class="meta">เวอร์ชัน: 1.0.0 · อัปเดตล่าสุด: 2025-10-16</div>
+    </header>
+
+    <nav class="toc card" aria-label="สารบัญ">
+      <h2>สารบัญ</h2>
+      <ul>
+        <li><a href="#overview">ภาพรวมและการเตรียมพร้อม</a></li>
+        <li><a href="#ui">โครงสร้างหน้าจอหลัก</a></li>
+        <li><a href="#steps">วิธีใช้งานแบบ Step-by-Step</a></li>
+        <li><a href="#examples">ตัวอย่างการใช้งาน</a></li>
+        <li><a href="#figures">ภาพประกอบพร้อมคำอธิบาย</a></li>
+        <li><a href="#index">ดัชนี</a></li>
+      </ul>
+    </nav>
+
+    <section id="overview">
+      <h2>ภาพรวมและการเตรียมพร้อม</h2>
+      <div class="card">
+        <p>
+          หน้านี้เป็นตัวอย่าง HTML ของคู่มือ Admin License Tool ซึ่งจัดวางเนื้อหาให้เข้าใจง่าย
+          มีสีและตัวอักษรที่สอดคล้องกัน พร้อมภาพประกอบและขั้นตอนการใช้งานจริงตามระบบที่พัฒนาไว้
+        </p>
+        <p class="muted">ไฟล์รูปถูกอ้างอิงจากโฟลเดอร์: <span class="code">assets/manual/admin/</span></p>
+        <div class="callout">
+          เคล็ดลับ: คุณสามารถเปิดไฟล์นี้โดยตรงผ่านเบราว์เซอร์ หรือโฮสต์ผ่าน <span class="kbd">python -m http.server</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="ui">
+      <h2>โครงสร้างหน้าจอหลัก</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>ส่วนควบคุมคีย์และฟอร์ม</h3>
+          <ul>
+            <li>เลือกคีย์ส่วนตัว (PEM)</li>
+            <li>กรอกข้อมูลลูกค้าและผลิตภัณฑ์</li>
+            <li>ตั้งค่าโหมดใบอนุญาต: <strong>Standard</strong>, <strong>Offline</strong></li>
+            <li>กำหนดวันหมดอายุและการใช้งานออฟไลน์</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>ผลลัพธ์และการบันทึก</h3>
+          <ul>
+            <li>พรีวิว payload และลายเซ็น</li>
+            <li>บันทึกไฟล์ใบอนุญาต <span class="code">.dat</span></li>
+            <li>ข้อความแจ้งเตือนสถานะการทำงาน</li>
+          </ul>
+        </div>
+      </div>
+      <figure class="figure">
+        <img src="../assets/manual/admin/admin_screenshot_01_main.png" alt="หน้าต่างหลักของ Admin License Tool" />
+        <figcaption>รูปที่ 1: หน้าต่างหลักของ Admin License Tool (ภาพจริง)</figcaption>
+      </figure>
+    </section>
+
+    <section id="steps">
+      <h2>วิธีใช้งานแบบ Step-by-Step</h2>
+      <div class="card steps">
+        <ol>
+          <li>กดปุ่ม “เลือกคีย์ส่วนตัว” แล้วเลือกไฟล์ <span class="code">admin_ed25519_private_key.pem</span></li>
+          <li>กรอกข้อมูลลูกค้าและผลิตภัณฑ์ให้ครบถ้วน</li>
+          <li>เลือกโหมดไลเซนส์: Standard หรือ Offline พร้อมกำหนดวันหมดอายุ</li>
+          <li>กด “สร้างไลเซนส์” เพื่อให้ระบบเข้ารหัสและเซ็น payload</li>
+          <li>ตรวจสอบพรีวิว แล้วกด “บันทึกไฟล์ไลเซนส์” เพื่อสร้างไฟล์ <span class="code">license.dat</span></li>
+        </ol>
+      </div>
+      <figure class="figure">
+        <img src="../assets/manual/admin/admin_screenshot_02_key_selected.png" alt="คีย์ส่วนตัวถูกโหลดแล้ว" />
+        <figcaption>รูปที่ 2: คีย์ส่วนตัวถูกโหลดแล้ว (ภาพจริง)</figcaption>
+      </figure>
+      <figure class="figure">
+        <img src="../assets/manual/admin/admin_screenshot_03_form.png" alt="กรอกข้อมูลฟอร์มลูกค้าและผลิตภัณฑ์" />
+        <figcaption>รูปที่ 3: กรอกข้อมูลฟอร์มลูกค้าและผลิตภัณฑ์ (ภาพจริง)</figcaption>
+      </figure>
+      <figure class="figure">
+        <img src="../assets/manual/admin/admin_screenshot_04_preview.png" alt="พรีวิวไฟล์ใบอนุญาต" />
+        <figcaption>รูปที่ 4: พรีวิวไฟล์ใบอนุญาต (ภาพจริง)</figcaption>
+      </figure>
+    </section>
+
+    <section id="examples">
+      <h2>ตัวอย่างการใช้งาน</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>โหมด Standard</h3>
+          <p>ลูกค้าต่ออินเทอร์เน็ตเพื่อยืนยันใบอนุญาตเมื่อใช้งานครั้งแรก</p>
+          <figure class="figure">
+            <img src="../assets/manual/admin/figure_05_license_modes.png" alt="โหมดไลเซนส์ในระบบ" />
+            <figcaption>รูปที่ 5: โหมดไลเซนส์ในระบบ</figcaption>
+          </figure>
+        </div>
+        <div class="card">
+          <h3>โหมด Offline</h3>
+          <p>ลูกค้าสามารถทำงานเสร็จสมบูรณ์โดยไม่เชื่อมต่อเครือข่าย ตามช่วงเวลาที่กำหนด</p>
+          <figure class="figure">
+            <img src="../assets/manual/admin/figure_06_offline_flow.png" alt="ขั้นตอนการทำงานแบบออฟไลน์" />
+            <figcaption>รูปที่ 6: ขั้นตอนการทำงานแบบออฟไลน์</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="figures">
+      <h2>ภาพประกอบพร้อมคำอธิบาย</h2>
+      <div class="card">
+        <p>ภาพประกอบประกอบด้วยภาพจริงจากหน้าจอ Admin Electron พร้อมคำอธิบายและหมายเลขอ้างอิงให้สอดคล้องกับหัวข้อในคู่มือ</p>
+        <ul>
+          <li>รูปที่ 1 – หน้าต่างหลัก (ภาพจริง)</li>
+          <li>รูปที่ 2 – สถานะคีย์ส่วนตัวถูกโหลด (ภาพจริง)</li>
+          <li>รูปที่ 3 – ฟอร์มข้อมูลลูกค้าและผลิตภัณฑ์ (ภาพจริง)</li>
+          <li>รูปที่ 4 – พรีวิวไฟล์ใบอนุญาต (ภาพจริง)</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="index">
+      <h2>ดัชนี</h2>
+      <div class="index card">
+        <a href="#overview">Overview</a>
+        <a href="#ui">UI Structure</a>
+        <a href="#steps">Step-by-Step</a>
+        <a href="#examples">Examples</a>
+        <a href="#figures">Figures</a>
+      </div>
+    </section>
+
+    <footer>
+      เอกสารนี้เป็นตัวอย่างหน้า HTML ที่จัดรูปแบบให้ใกล้เคียงกับคู่มือภาษาไทยฉบับ Markdown ในโฟลเดอร์ <span class="code">docs/Admin_User_Guide_th.md</span> และอ้างอิงรูปจาก <span class="code">assets/manual/admin/</span>
+    </footer>
+  </div>
+</body>
+</html>

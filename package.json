@@ -1,0 +1,121 @@
+{
+  "name": "cnc-costify-ai",
+  "version": "3.0.0",
+  "description": "CNC Costify AI 2026 - Cost calculation tool for CNC machining",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "benchmark-step": "node scripts/benchmark_step_volume.js --dir . --out benchmark_step_results.csv",
+    "electron:start": "electron electron/main.js",
+    "electron:dev": "set APP_URL=http://localhost:5000 && electron electron/main.js",
+    "admin:start": "electron admin/main.js",
+    "pack:win": "electron-builder --win --x64",
+    "dist:win": "electron-builder --win --x64 --publish never",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:linux": "electron-builder --linux --publish never",
+    "admin:dist": "electron-builder --config build/admin-builder.yml -w --publish never",
+    "backend:build": "pyinstaller -y CNC-Costify-AI.spec --distpath dist --workpath build/CNC-Costify-AI --clean",
+    "backend:build:onefile": "\"C:\\Users\\HP\\Miniconda3-occt\\envs\\occ\\python.exe\" -m PyInstaller -y CNC-Costify-AI.onefile.spec --distpath dist --workpath build/CNC-Costify-AI --clean",
+    "build:oneclick": "npm run backend:build:onefile && npm run dist:win && npm run verify:release && npm run open:release",
+    "verify:release": "node -e \"const fs=require('fs');const p='release_final_v5/CNC Costify AI 2026 V3.0 Setup.exe';if(fs.existsSync(p)){console.log('Build OK: '+p);}else{console.error('Build failed: '+p+' not found');process.exit(1);}\"",
+    "open:release": "explorer release_final_v5",
+    "postbuild:oneclick": "npm run verify:release && npm run open:release",
+    "update-version": "node scripts/update-version.js"
+  },
+  "keywords": [
+    "cnc",
+    "cost",
+    "calculator",
+    "machining"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.18.2",
+    "express-session": "^1.18.0",
+    "axios": "^1.7.2",
+    "opencascade.js": "^2.0.0-beta.b5ff984",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-local": "^1.0.0",
+    "path": "^0.12.7",
+    "sqlite3": "^5.1.7",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "electron": "^35.7.5",
+    "electron-builder": "^24.9.3",
+    "nodemon": "^3.0.1"
+  },
+  "build": {
+    "appId": "com.cnc.costify.ai",
+    "productName": "CNC Costify AI 2026 V3.0",
+    "artifactName": "CNC Costify AI 2026 V3.0 Setup.exe",
+    "directories": {
+      "output": "release_final_v5"
+    },
+    "files": [
+      "electron/**",
+      "CNC_Costify_AI_V6.html",
+      "CNC Costify AI V5.5.html",
+      "assets/**",
+      "STLLoader.js",
+      "step-converter.js"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icons/app.ico",
+      "extraResources": [
+        {
+          "from": "dist/CNC-Costify-AI.exe",
+          "to": "CNC-Costify-AI.exe"
+        }
+      ]
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icons/app.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "extraResources": [
+        {
+          "from": "dist/CNC-Costify-AI",
+          "to": "CNC-Costify-AI"
+        }
+      ]
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icons",
+      "category": "Utility",
+      "extraResources": [
+        {
+          "from": "dist/CNC-Costify-AI",
+          "to": "CNC-Costify-AI"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CNC Costify AI 2026 V3.0",
+      "perMachine": true,
+      "runAfterFinish": true,
+      "include": "build/installer.nsh"
+    }
+  }
+}
