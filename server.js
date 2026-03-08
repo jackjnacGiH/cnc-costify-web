@@ -166,6 +166,15 @@ app.get('/original', isAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'CNC Costify AI V5.5.html'));
 });
 
+// Route for login and register
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+app.get('/register.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'register.html'));
+});
+
 
 
 // API: Save to Excel (browser fallback without Electron)
