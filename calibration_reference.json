@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-10-08T10:31:00Z",
+  "note": "Baseline calibration matching ZW3D results. Use this as canonical reference.",
+  "method": {
+    "description": "Cylinder via cylindrical faces; augment with circle edges perpendicular to axis; mesh-based radial profile along axis slices; choose maximum diameter among sources; volume uses selected diameter.",
+    "axis_source": "cylinder_faces",
+    "profile": {
+      "profile_slices": 256,
+      "profile_bin_mm": 0.25,
+      "exports_debug": true
+    },
+    "selection_rule": [
+      "prefer true cylinder face radius",
+      "if circle edges (perpendicular to axis) yield larger radius, use that",
+      "else if mesh radial-profile max radius is larger, use that",
+      "snap diameter toward common sizes within tolerance"
+    ]
+  },
+  "reference_file": "POM21.stp",
+  "reference_result": {
+    "type": "cylinder",
+    "stock": {"diameter_mm": 20.0, "length_mm": 105.0},
+    "obb_mm": {"width_mm": 36.0000004, "depth_mm": 35.91250688917666, "height_mm": 105.12095841155863},
+    "volume_mm3": 32986.722862692826
+  }
+}
