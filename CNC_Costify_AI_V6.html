@@ -5073,16 +5073,18 @@
                 if (fileName.endsWith('.step') || fileName.endsWith('.stp')) {
                     // ซ่อนข้อความระหว่างประมวลผลตามคำขอผู้ใช้
                     let processingMsg = null;
+                    let converter = null;
+                    let fileContent = '';
+                    let calculatedVolume = 0;
 
                     try {
                         // Initialize STEP converter
-                        const converter = new StepConverter();
+                        converter = new StepConverter();
 
                         // Read file content
-                        const fileContent = await converter.readFileAsText(file);
+                        fileContent = await converter.readFileAsText(file);
 
                         // Try server-side OCCT API first
-                        let calculatedVolume = 0;
                         try {
                             const fd = new FormData();
                             fd.append('file', file);
@@ -5167,13 +5169,19 @@
                             if (stockResp.ok) {
                                 const stockData = await stockResp.json();
                                 applyStockData(stockData);
-                            } else {
+                            } else if (converter) {
                                 const fallbackStock = converter.calculateStockFromSTEP(fileContent);
                                 applyStockData(fallbackStock);
                             }
                         } catch (e) {
-                            const fallbackStock = converter.calculateStockFromSTEP(fileContent);
-                            applyStockData(fallbackStock);
+                            if (converter) {
+                                try {
+                                    const fallbackStock = converter.calculateStockFromSTEP(fileContent);
+                                    applyStockData(fallbackStock);
+                                } catch (err2) {
+                                    console.error('Fallback stock calc failed', err2);
+                                }
+                            }
                         }
 
 
