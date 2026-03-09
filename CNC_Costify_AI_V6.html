@@ -3961,6 +3961,7 @@
 
         document.getElementById('calculateBtn').addEventListener('click', () => {
             // Block calculation when license is not verified
+            /*
             if (typeof licenseStatusState !== 'undefined' && licenseStatusState !== 'active' && licenseStatusState !== 'grace') {
                 const t = translations[currentLang] || {};
                 const title = t.licenseStatus_unverified || 'Not verified';
@@ -3970,6 +3971,7 @@
                 alert(msg);
                 return;
             }
+            */
             // Show popup when backend is offline
             if (typeof backendStatusState !== 'undefined' && backendStatusState !== 'online') {
                 const t = translations[currentLang] || {};
