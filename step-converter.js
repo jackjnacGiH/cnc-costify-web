@@ -138,14 +138,18 @@ class StepConverter {
             return null;
         }
         const xs = coordinates.map(p => p.x);
-        const ys = coordinates.map(p => p.y);
-        const zs = coordinates.map(p => p.z);
-        const minX = Math.min(...xs);
-        const maxX = Math.max(...xs);
-        const minY = Math.min(...ys);
-        const maxY = Math.max(...ys);
-        const minZ = Math.min(...zs);
-        const maxZ = Math.max(...zs);
+        let minX = Infinity, maxX = -Infinity;
+        let minY = Infinity, maxY = -Infinity;
+        let minZ = Infinity, maxZ = -Infinity;
+        for (let i = 0; i < coordinates.length; i++) {
+            const p = coordinates[i];
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+            if (p.z < minZ) minZ = p.z;
+            if (p.z > maxZ) maxZ = p.z;
+        }
         const dxRaw = Math.abs(maxX - minX);
         const dyRaw = Math.abs(maxY - minY);
         const dzRaw = Math.abs(maxZ - minZ);
@@ -399,12 +403,18 @@ class StepConverter {
             }).filter(coord => coord !== null);
 
             // Calculate bounding box
-            const minX = Math.min(...coordinates.map(p => p.x));
-            const maxX = Math.max(...coordinates.map(p => p.x));
-            const minY = Math.min(...coordinates.map(p => p.y));
-            const maxY = Math.max(...coordinates.map(p => p.y));
-            const minZ = Math.min(...coordinates.map(p => p.z));
-            const maxZ = Math.max(...coordinates.map(p => p.z));
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+            let minZ = Infinity, maxZ = -Infinity;
+            for (let i = 0; i < coordinates.length; i++) {
+                const p = coordinates[i];
+                if (p.x < minX) minX = p.x;
+                if (p.x > maxX) maxX = p.x;
+                if (p.y < minY) minY = p.y;
+                if (p.y > maxY) maxY = p.y;
+                if (p.z < minZ) minZ = p.z;
+                if (p.z > maxZ) maxZ = p.z;
+            }
 
             boundingVolume = (maxX - minX) * (maxY - minY) * (maxZ - minZ);
         }
