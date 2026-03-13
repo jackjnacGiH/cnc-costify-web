@@ -6,6 +6,7 @@ const axios = require('axios');
 const { spawn } = require('child_process');
 const net = require('net');
 const http = require('http');
+const multer = require('multer');
 const StepConverter = require('./step-converter.js');
 
 const expressSession = require('express-session');
@@ -145,7 +146,7 @@ async function startFlaskIfNeeded() {
 
 // Middlewares
 app.use(express.static(__dirname));
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(expressSession({ secret: 'cnc-costify-secret', resave: false, saveUninitialized: false }));
 const passport = require('passport');
 app.use(passport.initialize());
@@ -181,33 +182,41 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
-// ---- STEP File APIs ----
-// Parse raw multipart bodies for STEP endpoints
-function parseMultipartText(req) {
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        req.on('data', c => chunks.push(c));
-        req.on('end', () => {
-            try {
-                const body = Buffer.concat(chunks);
-                const boundaryMatch = (req.headers['content-type'] || '').match(/boundary=([^\s;]+)/);
-                if (!boundaryMatch) return resolve('');
-                const boundary = '--' + boundaryMatch[1];
-                const bodyStr = body.toString('binary');
-                const parts = bodyStr.split(boundary);
-                for (const part of parts) {
-                    if (!part.includes('filename=')) continue;
-                    const idx = part.indexOf('\r\n\r\n');
-                    if (idx < 0) continue;
-                    const content = part.slice(idx + 4, part.lastIndexOf('\r\n'));
-                    return resolve(Buffer.from(content, 'binary').toString('utf8'));
-                }
-                resolve('');
-            } catch (e) { reject(e); }
+
+// ---- STEP File APIs (using multer for reliable multipart upload) ----
+const stepUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+});
+
+app.post('/api/step/volume', stepUpload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ ok: false, error: 'No file uploaded' });
+        const fileContent = req.file.buffer.toString('utf8');
+        if (!fileContent) return res.status(400).json({ ok: false, error: 'Empty file' });
+        const result = computeStepFromContent(fileContent);
+        // Return both volume AND stock in one response so frontend can use both
+        return res.json({
+            ok: true,
+            volume_mm3: result.volume_mm3,
+            stock: result.stock
         });
-        req.on('error', reject);
-    });
-}
+    } catch (e) {
+        return res.status(500).json({ ok: false, error: String(e) });
+    }
+});
+
+app.post('/api/step/stock', stepUpload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ ok: false, error: 'No file uploaded' });
+        const fileContent = req.file.buffer.toString('utf8');
+        const result = computeStepFromContent(fileContent);
+        // Return stock in the exact format applyStockData() expects
+        return res.json(result.stock || result);
+    } catch (e) {
+        return res.status(500).json({ ok: false, error: String(e) });
+    }
+});
 
 /**
  * Parse STEP content: build entity map { id: { type, args } }
@@ -324,34 +333,6 @@ function computeStepFromContent(content) {
     };
 }
 
-app.post('/api/step/volume', async (req, res) => {
-    try {
-        const fileContent = await parseMultipartText(req);
-        if (!fileContent) return res.status(400).json({ ok: false, error: 'No file content' });
-        const result = computeStepFromContent(fileContent);
-        // Return both volume AND stock in one response so frontend can use both
-        return res.json({
-            ok: true,
-            volume_mm3: result.volume_mm3,
-            stock: result.stock
-        });
-    } catch (e) {
-        return res.status(500).json({ ok: false, error: String(e) });
-    }
-});
-
-app.post('/api/step/stock', async (req, res) => {
-    try {
-        const fileContent = await parseMultipartText(req);
-        if (!fileContent) return res.status(400).json({ ok: false, error: 'No file content' });
-        const result = computeStepFromContent(fileContent);
-        // Return stock in the exact format applyStockData() expects:
-        // { type, stock: { width_mm, depth_mm, height_mm }, volume_mm3 }
-        return res.json(result.stock || result);
-    } catch (e) {
-        return res.status(500).json({ ok: false, error: String(e) });
-    }
-});
 
 
 // API: Save to Excel (browser fallback without Electron)
