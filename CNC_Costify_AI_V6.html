@@ -4994,11 +4994,76 @@
                 });
             }
         })();
+        // ── Inline STEP bounding-box parser (self-contained, no dependencies) ──
+        function parseStepBoundingBox(txt) {
+            // 1. Build entity map: id → {type, args}
+            const emap = {};
+            const eRe = /#(\d+)\s*=\s*([A-Z_][A-Z0-9_]*)\s*\(([^;]*)\)\s*;/g;
+            let em;
+            while ((em = eRe.exec(txt)) !== null) {
+                emap[em[1]] = { type: em[2].toUpperCase(), args: em[3] };
+            }
+            // 2. Build CARTESIAN_POINT map
+            const cpMap = {};
+            for (const [id, { type, args }] of Object.entries(emap)) {
+                if (type !== 'CARTESIAN_POINT') continue;
+                const nums = args.match(/[-+]?\d*\.?\d+(?:[Ee][+-]?\d+)?/g);
+                if (nums && nums.length >= 3) {
+                    cpMap[id] = [parseFloat(nums[0]), parseFloat(nums[1]), parseFloat(nums[2])];
+                }
+            }
+            // 3. Follow VERTEX_POINT → CARTESIAN_POINT  (gets real geometry only)
+            const vpIds = new Set();
+            for (const [, { type, args }] of Object.entries(emap)) {
+                if (type !== 'VERTEX_POINT') continue;
+                const refs = args.match(/#(\d+)/g);
+                if (refs) refs.forEach(r => { const id = r.slice(1); if (cpMap[id]) vpIds.add(id); });
+            }
+            const verts = vpIds.size > 0
+                ? [...vpIds].map(id => cpMap[id])
+                : Object.values(cpMap);
+            if (!verts.length) return null;
+            // 4. Bounding box
+            const xs = verts.map(v => v[0]), ys = verts.map(v => v[1]), zs = verts.map(v => v[2]);
+            let rawDx = Math.max(...xs) - Math.min(...xs);
+            let rawDy = Math.max(...ys) - Math.min(...ys);
+            let rawDz = Math.max(...zs) - Math.min(...zs);
+            // 5. Unit scale
+            let scale = 1.0;
+            const uM = txt.match(/SI_UNIT\s*\([^)]*\.(MILLI|CENTI|DECI|KILO)?\.\s*,\s*\.METRE\.\s*\)/i);
+            if (uM) {
+                const p = (uM[1] || '').toUpperCase();
+                scale = p === 'MILLI' ? 1 : p === 'CENTI' ? 10 : p === 'DECI' ? 100 : p === 'KILO' ? 1e6 : 1000;
+            } else if (Math.max(rawDx, rawDy, rawDz) < 10) scale = 1000;
+            const dx = rawDx * scale, dy = rawDy * scale, dz = rawDz * scale;
+            // 6. Fill factor from face/surface counts
+            let faces = 0, planes = 0, curves = 0, solids = 0;
+            const CURVED = new Set(['CYLINDRICAL_SURFACE','CONICAL_SURFACE','SPHERICAL_SURFACE',
+                'TOROIDAL_SURFACE','B_SPLINE_SURFACE_WITH_KNOTS','B_SPLINE_SURFACE']);
+            for (const { type } of Object.values(emap)) {
+                if (type === 'ADVANCED_FACE') faces++;
+                if (type === 'PLANE') planes++;
+                if (CURVED.has(type)) curves++;
+                if (type === 'MANIFOLD_SOLID_BREP') solids++;
+            }
+            const pr = faces ? planes / faces : 0;
+            const cr = faces ? curves / faces : 0;
+            let fill = pr > 0.85 ? 0.63 : cr > 0.50 ? 0.50 : cr > 0.30 ? 0.56 : 0.60;
+            if (solids > 1) fill = Math.min(fill * 1.05, 0.85);
+            // 7. Sort dims: smallest→height, middle→width, largest→depth
+            const dims = [dx, dy, dz].map(v => Math.round(v * 100) / 100).sort((a, b) => a - b);
+            const bboxVol = dx * dy * dz;
+            return {
+                volume_mm3: Math.round(bboxVol * fill * 100) / 100,
+                stock: {
+                    type: 'box',
+                    stock: { width_mm: dims[1], depth_mm: dims[2], height_mm: dims[0] },
+                    volume_mm3: Math.round(bboxVol * 1000) / 1000
+                }
+            };
+        }
 
 
-
-
-        // Function to handle STEP file upload from the orange Upload button
         async function handleStepFileUpload(event) {
             const file = event.target.files[0];
             const fileNameDisplay = document.getElementById('fileNameDisplay');
@@ -5101,43 +5166,51 @@
                     let calculatedVolume = 0;
 
                     try {
-                        // Initialize STEP converter
-                        converter = new StepConverter();
-
                         // Read file content
+                        const converter = new StepConverter();
                         fileContent = await converter.readFileAsText(file);
 
-                        // === Try server-side API first (returns BOTH volume AND stock) ===
+                        // === STEP 1: Compute bounding box INLINE (always runs, no server needed) ===
+                        const inlineResult = parseStepBoundingBox(fileContent);
+                        let stockApplied = false;
+                        if (inlineResult && inlineResult.stock) {
+                            applyStockData(inlineResult.stock);
+                            stockApplied = true;
+                            calculatedVolume = inlineResult.volume_mm3;
+                        }
+
+                        // === STEP 2: Try server API for potentially more accurate volume ===
                         let serverData = null;
                         try {
                             const fd = new FormData();
                             fd.append('file', file);
                             const apiUrl = `${getBackendBaseUrl()}/api/step/volume`;
-                            const resp = await fetch(apiUrl, { method: 'POST', body: fd, signal: AbortSignal.timeout(30000) });
+                            const resp = await fetch(apiUrl, { method: 'POST', body: fd, signal: AbortSignal.timeout(15000) });
                             if (resp.ok) {
                                 const data = await resp.json();
                                 if (data && typeof data.volume_mm3 === 'number' && data.volume_mm3 > 0) {
                                     serverData = data;
                                     calculatedVolume = data.volume_mm3;
+                                    // If server also returned stock and inline didn't work, apply it
+                                    if (!stockApplied && data.stock) {
+                                        applyStockData(data.stock);
+                                        stockApplied = true;
+                                    }
                                 }
                             }
                         } catch (err) {
-                            console.warn('Server STEP API failed, using client-side fallback:', err);
+                            console.warn('Server STEP API unavailable, using inline result:', err.message);
                         }
 
-                        // === Fallback: client-side heuristic ===
+                        // === STEP 3: Ultimate fallback if nothing worked ===
                         if (!calculatedVolume || calculatedVolume <= 0) {
                             calculatedVolume = await converter.calculateVolumeFromSTEP(fileContent, file.name);
                         }
 
-                        // Remove processing message (disabled)
-                        if (processingMsg) processingMsg.remove();
-
                         // Clear any existing status messages first
+                        if (processingMsg) processingMsg.remove();
                         const existingMessages = fileNameDisplay.parentNode.querySelectorAll('.text-xs');
-                        existingMessages.forEach(msg => {
-                            if (msg !== fileNameDisplay) msg.remove();
-                        });
+                        existingMessages.forEach(msg => { if (msg !== fileNameDisplay) msg.remove(); });
 
                         // Set the calculated volume
                         const finalVolume = calculatedVolume > 0 ? calculatedVolume : (5000 + Math.random() * 10000);
@@ -5149,34 +5222,8 @@
                         successMsg.textContent = translations[currentLang].processingCompleted;
                         fileNameDisplay.parentNode.appendChild(successMsg);
 
-                        // === Apply stock data ===
-                        // If server returned stock data, use it directly (no 2nd API call needed)
-                        if (serverData && serverData.stock) {
-                            applyStockData(serverData.stock);
-                        } else {
-                            // Fallback: call /api/step/stock separately
-                            try {
-                                const fdStock = new FormData();
-                                fdStock.append('file', file);
-                                const stockResp = await fetch(`${getBackendBaseUrl()}/api/step/stock`, {
-                                    method: 'POST', body: fdStock, signal: AbortSignal.timeout(30000)
-                                });
-                                if (stockResp.ok) {
-                                    const stockData = await stockResp.json();
-                                    applyStockData(stockData);
-                                } else {
-                                    const fallbackStock = converter.calculateStockFromSTEP(fileContent);
-                                    applyStockData(fallbackStock);
-                                }
-                            } catch (e) {
-                                const fallbackStock = converter.calculateStockFromSTEP(fileContent);
-                                applyStockData(fallbackStock);
-                            }
-                        }
-
                         // Trigger calculation update
                         updateTotalPriceDisplay();
-
 
                     } catch (error) {
                         // Remove processing message (disabled)
