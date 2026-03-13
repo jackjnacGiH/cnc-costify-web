@@ -4819,10 +4819,27 @@
             try {
                 const timeoutMs = 3000;
                 const originPort = String(window.location.port || '');
-                const packaged = (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') || originPort === '5001'; // packaged app uses file:// or port 5001
+                const isHttps = window.location.protocol === 'https:';
+                const packaged = window.location.protocol === 'file:' || originPort === '5001';
                 const knownPort = (typeof window !== 'undefined' && window.__backendBasePort) ? window.__backendBasePort : null;
                 let healthy = false;
                 let chosenPort = null;
+
+                // On HTTPS deployment, use same-origin /api/health (avoid mixed-content blocks)
+                if (isHttps) {
+                    try {
+                        const r = await fetch('/api/health', { method: 'GET' });
+                        if (r.ok) {
+                            healthy = true;
+                            window.__backendBaseUrl = window.location.origin;
+                        }
+                    } catch (_) { }
+                    backendStatusState = healthy ? 'online' : 'offline';
+                    stopStartupProgress(healthy);
+                    updateBackendStatusUI();
+                    backendHealthInFlight = false;
+                    return;
+                }
 
                 const tryPing = async (p) => {
                     const url = `http://127.0.0.1:${p}/api/health`;
@@ -4873,6 +4890,10 @@
         function getBackendBaseUrl() {
             const url = (typeof window !== 'undefined' && window.__backendBaseUrl) ? window.__backendBaseUrl : '';
             if (url) return url;
+            // On HTTPS deployment use same origin (Node.js server handles all API endpoints)
+            if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+                return window.location.origin;
+            }
             const originPort = String(window.location.port || '');
             const packaged = (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') || originPort === '5001';
             const p = packaged ? 5001 : 5002;
