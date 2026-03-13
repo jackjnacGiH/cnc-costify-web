@@ -181,7 +181,7 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
-// ---- STEP File APIs (multipart via raw body) ----
+// ---- STEP File APIs ----
 // Parse raw multipart bodies for STEP endpoints
 function parseMultipartText(req) {
     return new Promise((resolve, reject) => {
@@ -197,7 +197,6 @@ function parseMultipartText(req) {
                 const parts = bodyStr.split(boundary);
                 for (const part of parts) {
                     if (!part.includes('filename=')) continue;
-                    // Find the blank line separating headers from content
                     const idx = part.indexOf('\r\n\r\n');
                     if (idx < 0) continue;
                     const content = part.slice(idx + 4, part.lastIndexOf('\r\n'));
@@ -210,13 +209,127 @@ function parseMultipartText(req) {
     });
 }
 
+/**
+ * Parse STEP content: build entity map { id: { type, args } }
+ */
+function parseStepEntities(content) {
+    const map = {};
+    const re = /#(\d+)\s*=\s*([A-Z_][A-Z0-9_]*)\s*\(([^;]*)\);/gi;
+    let m;
+    while ((m = re.exec(content)) !== null) {
+        map[m[1]] = { type: m[2].toUpperCase(), args: m[3] };
+    }
+    return map;
+}
+
+/**
+ * Get CARTESIAN_POINT values for VERTEX_POINT entities only.
+ * Falls back to all CARTESIAN_POINTs if no VERTEX_POINT found.
+ * This avoids picking up direction vectors which have huge coordinate values.
+ */
+function getVertexCoordinates(entityMap) {
+    // Build CP lookup
+    const cpMap = {};
+    for (const [id, { type, args }] of Object.entries(entityMap)) {
+        if (type === 'CARTESIAN_POINT') {
+            const nums = args.match(/[-+]?\d*\.?\d+(?:[Ee][+-]?\d+)?/g);
+            if (nums && nums.length >= 3) {
+                cpMap[id] = [parseFloat(nums[0]), parseFloat(nums[1]), parseFloat(nums[2])];
+            }
+        }
+    }
+
+    // Find vertex point references
+    const vpIds = new Set();
+    for (const [, { type, args }] of Object.entries(entityMap)) {
+        if (type === 'VERTEX_POINT') {
+            const refs = args.match(/#(\d+)/g);
+            if (refs) refs.forEach(r => { const id = r.slice(1); if (cpMap[id]) vpIds.add(id); });
+        }
+    }
+
+    if (vpIds.size > 0) {
+        return [...vpIds].map(id => cpMap[id]);
+    }
+    // Fallback: all CPs
+    return Object.values(cpMap);
+}
+
+/**
+ * Detect unit scale factor to convert to mm.
+ */
+function detectScale(content, dx, dy, dz) {
+    const m = content.match(/SI_UNIT\s*\([^)]*\)\s*,\s*\.\s*(MILLI|CENTI|DECI|KILO)?\s*\.\s*,\s*\.\s*METRE\s*\./i);
+    if (m) {
+        const prefix = (m[1] || '').toUpperCase();
+        if (prefix === 'MILLI') return 1.0;
+        if (prefix === 'CENTI') return 10.0;
+        if (prefix === '') return 1000.0;
+        if (prefix === 'KILO') return 1e6;
+    }
+    const maxDim = Math.max(dx, dy, dz);
+    if (maxDim > 0 && maxDim < 10) return 1000.0; // likely metres
+    return 1.0;
+}
+
+/**
+ * Estimate fill factor (volume/bounding-box) based on part geometry.
+ */
+function computeFillFactor(entityMap) {
+    let faceCount = 0, solidCount = 0, surfaceCount = 0, planeCount = 0;
+    for (const { type } of Object.values(entityMap)) {
+        if (type === 'ADVANCED_FACE') faceCount++;
+        if (type === 'MANIFOLD_SOLID_BREP') solidCount++;
+        if (['CYLINDRICAL_SURFACE', 'CONICAL_SURFACE', 'SPHERICAL_SURFACE',
+            'TOROIDAL_SURFACE', 'B_SPLINE_SURFACE_WITH_KNOTS', 'B_SPLINE_SURFACE'].includes(type)) surfaceCount++;
+        if (type === 'PLANE') planeCount++;
+    }
+    if (faceCount === 0) return 0.5;
+    const curveRatio = surfaceCount / faceCount;
+    const planeRatio = planeCount / faceCount;
+    let base = 0.58;
+    if (planeRatio > 0.85) base = 0.70;
+    else if (curveRatio > 0.40) base = 0.45;
+    if (solidCount > 1) base = Math.min(base * 1.05, 0.85);
+    return base;
+}
+
+/**
+ * Full STEP volume + stock calculation from text content.
+ */
+function computeStepFromContent(content) {
+    const entityMap = parseStepEntities(content);
+    const vertices = getVertexCoordinates(entityMap);
+    if (!vertices || vertices.length < 2) {
+        return { error: 'No vertex coordinates found', volume_mm3: 0 };
+    }
+    const xs = vertices.map(v => v[0]);
+    const ys = vertices.map(v => v[1]);
+    const zs = vertices.map(v => v[2]);
+    const rawDx = Math.max(...xs) - Math.min(...xs);
+    const rawDy = Math.max(...ys) - Math.min(...ys);
+    const rawDz = Math.max(...zs) - Math.min(...zs);
+    const scale = detectScale(content, rawDx, rawDy, rawDz);
+    const dx = rawDx * scale, dy = rawDy * scale, dz = rawDz * scale;
+    const boundingVol = dx * dy * dz;
+    const fill = computeFillFactor(entityMap);
+    const dims = [dx, dy, dz].map(v => Math.round(v * 100) / 100).sort((a, b) => a - b);
+    return {
+        volume_mm3: Math.round(boundingVol * fill * 100) / 100,
+        stock: {
+            type: 'box',
+            stock: { width_mm: dims[1], depth_mm: dims[2], height_mm: dims[0] },
+            volume_mm3: Math.round(boundingVol * 1000) / 1000
+        }
+    };
+}
+
 app.post('/api/step/volume', async (req, res) => {
     try {
         const fileContent = await parseMultipartText(req);
         if (!fileContent) return res.status(400).json({ ok: false, error: 'No file content' });
-        const converter = new StepConverter();
-        const volume_mm3 = await converter.calculateVolumeFromSTEP(fileContent, 'upload.step');
-        return res.json({ ok: true, volume_mm3 });
+        const result = computeStepFromContent(fileContent);
+        return res.json({ ok: true, ...result });
     } catch (e) {
         return res.status(500).json({ ok: false, error: String(e) });
     }
@@ -226,9 +339,8 @@ app.post('/api/step/stock', async (req, res) => {
     try {
         const fileContent = await parseMultipartText(req);
         if (!fileContent) return res.status(400).json({ ok: false, error: 'No file content' });
-        const converter = new StepConverter();
-        const result = converter.calculateStockFromSTEP(fileContent);
-        return res.json(result);
+        const result = computeStepFromContent(fileContent);
+        return res.json(result.stock || result);
     } catch (e) {
         return res.status(500).json({ ok: false, error: String(e) });
     }
