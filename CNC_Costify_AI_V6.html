@@ -5107,21 +5107,25 @@
                         // Read file content
                         fileContent = await converter.readFileAsText(file);
 
-                        // Try server-side OCCT API first
+                        // === Try server-side API first (returns BOTH volume AND stock) ===
+                        let serverData = null;
                         try {
                             const fd = new FormData();
                             fd.append('file', file);
                             const apiUrl = `${getBackendBaseUrl()}/api/step/volume`;
-                            const resp = await fetch(apiUrl, { method: 'POST', body: fd });
+                            const resp = await fetch(apiUrl, { method: 'POST', body: fd, signal: AbortSignal.timeout(30000) });
                             if (resp.ok) {
                                 const data = await resp.json();
-                                if (data && typeof data.volume_mm3 === 'number') {
+                                if (data && typeof data.volume_mm3 === 'number' && data.volume_mm3 > 0) {
+                                    serverData = data;
                                     calculatedVolume = data.volume_mm3;
                                 }
                             }
                         } catch (err) {
-                            // fall back to client-side heuristic if API unavailable
+                            console.warn('Server STEP API failed, using client-side fallback:', err);
                         }
+
+                        // === Fallback: client-side heuristic ===
                         if (!calculatedVolume || calculatedVolume <= 0) {
                             calculatedVolume = await converter.calculateVolumeFromSTEP(fileContent, file.name);
                         }
@@ -5132,9 +5136,7 @@
                         // Clear any existing status messages first
                         const existingMessages = fileNameDisplay.parentNode.querySelectorAll('.text-xs');
                         existingMessages.forEach(msg => {
-                            if (msg !== fileNameDisplay) {
-                                msg.remove();
-                            }
+                            if (msg !== fileNameDisplay) msg.remove();
                         });
 
                         // Set the calculated volume
@@ -5147,24 +5149,34 @@
                         successMsg.textContent = translations[currentLang].processingCompleted;
                         fileNameDisplay.parentNode.appendChild(successMsg);
 
-                        try {
-                            const fdStock = new FormData();
-                            fdStock.append('file', file);
-                            const stockResp = await fetch(`${getBackendBaseUrl()}/api/step/stock`, { method: 'POST', body: fdStock });
-                            if (stockResp.ok) {
-                                const stockData = await stockResp.json();
-                                applyStockData(stockData);
-                            } else {
+                        // === Apply stock data ===
+                        // If server returned stock data, use it directly (no 2nd API call needed)
+                        if (serverData && serverData.stock) {
+                            applyStockData(serverData.stock);
+                        } else {
+                            // Fallback: call /api/step/stock separately
+                            try {
+                                const fdStock = new FormData();
+                                fdStock.append('file', file);
+                                const stockResp = await fetch(`${getBackendBaseUrl()}/api/step/stock`, {
+                                    method: 'POST', body: fdStock, signal: AbortSignal.timeout(30000)
+                                });
+                                if (stockResp.ok) {
+                                    const stockData = await stockResp.json();
+                                    applyStockData(stockData);
+                                } else {
+                                    const fallbackStock = converter.calculateStockFromSTEP(fileContent);
+                                    applyStockData(fallbackStock);
+                                }
+                            } catch (e) {
                                 const fallbackStock = converter.calculateStockFromSTEP(fileContent);
                                 applyStockData(fallbackStock);
                             }
-                        } catch (e) {
-                            const fallbackStock = converter.calculateStockFromSTEP(fileContent);
-                            applyStockData(fallbackStock);
                         }
 
                         // Trigger calculation update
                         updateTotalPriceDisplay();
+
 
                     } catch (error) {
                         // Remove processing message (disabled)

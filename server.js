@@ -329,7 +329,12 @@ app.post('/api/step/volume', async (req, res) => {
         const fileContent = await parseMultipartText(req);
         if (!fileContent) return res.status(400).json({ ok: false, error: 'No file content' });
         const result = computeStepFromContent(fileContent);
-        return res.json({ ok: true, ...result });
+        // Return both volume AND stock in one response so frontend can use both
+        return res.json({
+            ok: true,
+            volume_mm3: result.volume_mm3,
+            stock: result.stock
+        });
     } catch (e) {
         return res.status(500).json({ ok: false, error: String(e) });
     }
@@ -340,11 +345,14 @@ app.post('/api/step/stock', async (req, res) => {
         const fileContent = await parseMultipartText(req);
         if (!fileContent) return res.status(400).json({ ok: false, error: 'No file content' });
         const result = computeStepFromContent(fileContent);
+        // Return stock in the exact format applyStockData() expects:
+        // { type, stock: { width_mm, depth_mm, height_mm }, volume_mm3 }
         return res.json(result.stock || result);
     } catch (e) {
         return res.status(500).json({ ok: false, error: String(e) });
     }
 });
+
 
 // API: Save to Excel (browser fallback without Electron)
 app.post('/api/save-excel', async (req, res) => {
