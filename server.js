@@ -264,41 +264,40 @@ function getVertexCoordinates(entityMap) {
     return Object.values(cpMap);
 }
 
-/**
- * Detect unit scale factor to convert to mm.
- */
 function detectScale(content, dx, dy, dz) {
-    const m = content.match(/SI_UNIT\s*\([^)]*\)\s*,\s*\.\s*(MILLI|CENTI|DECI|KILO)?\s*\.\s*,\s*\.\s*METRE\s*\./i);
+    const m = content.match(/SI_UNIT\s*\([^)]*\.(MILLI|CENTI|DECI|KILO)?\.\s*,\s*\.METRE\.\s*\)/i);
     if (m) {
-        const prefix = (m[1] || '').toUpperCase();
-        if (prefix === 'MILLI') return 1.0;
-        if (prefix === 'CENTI') return 10.0;
-        if (prefix === '') return 1000.0;
-        if (prefix === 'KILO') return 1e6;
+        const p = (m[1] || '').toUpperCase();
+        if (p === 'MILLI') return 1.0;
+        if (p === 'CENTI') return 10.0;
+        if (p === 'DECI') return 100.0;
+        if (p === 'KILO') return 1e6;
+        return 1000.0; // bare METRE
     }
     const maxDim = Math.max(dx, dy, dz);
-    if (maxDim > 0 && maxDim < 10) return 1000.0; // likely metres
+    if (maxDim > 0 && maxDim < 10) return 1000.0;
     return 1.0;
 }
 
-/**
- * Estimate fill factor (volume/bounding-box) based on part geometry.
- */
 function computeFillFactor(entityMap) {
     let faceCount = 0, solidCount = 0, surfaceCount = 0, planeCount = 0;
+    const CURVED = ['CYLINDRICAL_SURFACE', 'CONICAL_SURFACE', 'SPHERICAL_SURFACE',
+        'TOROIDAL_SURFACE', 'B_SPLINE_SURFACE_WITH_KNOTS', 'B_SPLINE_SURFACE'];
     for (const { type } of Object.values(entityMap)) {
         if (type === 'ADVANCED_FACE') faceCount++;
         if (type === 'MANIFOLD_SOLID_BREP') solidCount++;
-        if (['CYLINDRICAL_SURFACE', 'CONICAL_SURFACE', 'SPHERICAL_SURFACE',
-            'TOROIDAL_SURFACE', 'B_SPLINE_SURFACE_WITH_KNOTS', 'B_SPLINE_SURFACE'].includes(type)) surfaceCount++;
+        if (CURVED.includes(type)) surfaceCount++;
         if (type === 'PLANE') planeCount++;
     }
-    if (faceCount === 0) return 0.5;
-    const curveRatio = surfaceCount / faceCount;
-    const planeRatio = planeCount / faceCount;
-    let base = 0.58;
-    if (planeRatio > 0.85) base = 0.70;
-    else if (curveRatio > 0.40) base = 0.45;
+    if (faceCount === 0) return 0.55;
+    const pr = planeCount / faceCount;
+    const cr = surfaceCount / faceCount;
+    // Calibrated: AL_Base_1 (mostly flat) → vol/bbox = 4368222/6900000 ≈ 0.633
+    let base;
+    if (pr > 0.85) base = 0.63;       // mostly planar → machined block
+    else if (cr > 0.50) base = 0.50;  // mostly curved → turned part
+    else if (cr > 0.30) base = 0.56;  // mixed
+    else base = 0.60;                 // general prismatic
     if (solidCount > 1) base = Math.min(base * 1.05, 0.85);
     return base;
 }
