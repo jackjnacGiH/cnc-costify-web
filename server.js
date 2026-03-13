@@ -6,6 +6,7 @@ const axios = require('axios');
 const { spawn } = require('child_process');
 const net = require('net');
 const http = require('http');
+const StepConverter = require('./step-converter.js');
 
 const expressSession = require('express-session');
 require('dotenv').config();
@@ -175,7 +176,63 @@ app.get('/register.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'register.html'));
 });
 
+// Health check endpoint for UI status
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
 
+// ---- STEP File APIs (multipart via raw body) ----
+// Parse raw multipart bodies for STEP endpoints
+function parseMultipartText(req) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        req.on('data', c => chunks.push(c));
+        req.on('end', () => {
+            try {
+                const body = Buffer.concat(chunks);
+                const boundaryMatch = (req.headers['content-type'] || '').match(/boundary=([^\s;]+)/);
+                if (!boundaryMatch) return resolve('');
+                const boundary = '--' + boundaryMatch[1];
+                const bodyStr = body.toString('binary');
+                const parts = bodyStr.split(boundary);
+                for (const part of parts) {
+                    if (!part.includes('filename=')) continue;
+                    // Find the blank line separating headers from content
+                    const idx = part.indexOf('\r\n\r\n');
+                    if (idx < 0) continue;
+                    const content = part.slice(idx + 4, part.lastIndexOf('\r\n'));
+                    return resolve(Buffer.from(content, 'binary').toString('utf8'));
+                }
+                resolve('');
+            } catch (e) { reject(e); }
+        });
+        req.on('error', reject);
+    });
+}
+
+app.post('/api/step/volume', async (req, res) => {
+    try {
+        const fileContent = await parseMultipartText(req);
+        if (!fileContent) return res.status(400).json({ ok: false, error: 'No file content' });
+        const converter = new StepConverter();
+        const volume_mm3 = await converter.calculateVolumeFromSTEP(fileContent, 'upload.step');
+        return res.json({ ok: true, volume_mm3 });
+    } catch (e) {
+        return res.status(500).json({ ok: false, error: String(e) });
+    }
+});
+
+app.post('/api/step/stock', async (req, res) => {
+    try {
+        const fileContent = await parseMultipartText(req);
+        if (!fileContent) return res.status(400).json({ ok: false, error: 'No file content' });
+        const converter = new StepConverter();
+        const result = converter.calculateStockFromSTEP(fileContent);
+        return res.json(result);
+    } catch (e) {
+        return res.status(500).json({ ok: false, error: String(e) });
+    }
+});
 
 // API: Save to Excel (browser fallback without Electron)
 app.post('/api/save-excel', async (req, res) => {
