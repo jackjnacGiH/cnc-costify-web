@@ -4996,156 +4996,99 @@
         })();
         // ── Inline STEP bounding-box parser (self-contained, no dependencies) ──
         function parseStepBoundingBox(txt) {
-            // 1. Build entity map
+            // ── 1. Entity map ─────────────────────────────────────────────────────
             const emap = {};
-            const eRe = /#(\d+)\s*=\s*([A-Z_][A-Z0-9_]*)\s*\(([^;]*)\)\s*;/g;
-            let em;
-            while ((em = eRe.exec(txt)) !== null) {
-                emap[em[1]] = { type: em[2].toUpperCase(), args: em[3] };
-            }
+            const re = /#(\d+)\s*=\s*([A-Z_][A-Z0-9_]*)\s*\(([^;]*)\)\s*;/g;
+            let m;
+            while ((m = re.exec(txt)) !== null)
+                emap[m[1]] = { type: m[2].toUpperCase(), args: m[3] };
 
-            // ── PRIORITY 1: Try to read stored volume from STEP metadata ──────────
-            // ZW3D, CATIA, SolidWorks sometimes embed exact volume as STEP property
-            function tryGetStoredVolume() {
-                const numRe = /[-+]?\d+\.?\d*(?:[Ee][+-]?\d+)?/;
-                // Pattern A: VALUE_REPRESENTATION_ITEM('volume', VOLUME_MEASURE(val))
-                const pA = txt.match(/VALUE_REPRESENTATION_ITEM\s*\(\s*'[^']*(?:volume|mass|vol)[^']*'\s*,\s*(?:VOLUME_MEASURE|NUMERIC_MEASURE)\s*\(\s*([-+]?\d[\d.Ee+\-]*)\s*\)/i);
-                if (pA) { const v = parseFloat(pA[1]); if (v > 0) return v; }
-                // Pattern B: MEASURE_WITH_UNIT(VOLUME_MEASURE(val), ...)
-                const pB = txt.match(/MEASURE_WITH_UNIT\s*\(\s*VOLUME_MEASURE\s*\(\s*([-+]?\d[\d.Ee+\-]*)\s*\)/i);
-                if (pB) { const v = parseFloat(pB[1]); if (v > 0) return v; }
-                // Pattern C: DESCRIPTIVE_REPRESENTATION_ITEM('volume','val')
-                const pC = txt.match(/DESCRIPTIVE_REPRESENTATION_ITEM\s*\(\s*'[^']*(?:volume|vol)[^']*'\s*,\s*'([-+]?\d[\d.Ee+\-]*)'/i);
-                if (pC) { const v = parseFloat(pC[1]); if (v > 0) return v; }
+            // ── 2. Try to read volume stored directly in STEP metadata ─────────────
+            // ZW3D / Catia / SolidWorks sometimes embed exact mass properties
+            function tryStoredVol() {
+                let mo;
+                // VALUE_REPRESENTATION_ITEM('volume', VOLUME_MEASURE(val))
+                mo = txt.match(/VALUE_REPRESENTATION_ITEM\s*\(\s*'[^']*(?:volume|vol)[^']*'\s*,\s*(?:VOLUME_MEASURE|NUMERIC_MEASURE)\s*\(\s*([\d.Ee+\-]+)\s*\)/i);
+                if (mo) { const v = +mo[1]; if (v > 0) return v; }
+                // MEASURE_WITH_UNIT(VOLUME_MEASURE(val), ...)
+                mo = txt.match(/MEASURE_WITH_UNIT\s*\(\s*VOLUME_MEASURE\s*\(\s*([\d.Ee+\-]+)\s*\)/i);
+                if (mo) { const v = +mo[1]; if (v > 0) return v; }
                 return null;
             }
 
-            // 2. Build CARTESIAN_POINT map (all named CPs)
-            const cpMap = {};
+            // ── 3. CARTESIAN_POINT map ────────────────────────────────────────────
+            const cp = {};
             for (const [id, { type, args }] of Object.entries(emap)) {
                 if (type !== 'CARTESIAN_POINT') continue;
-                const nums = args.match(/[-+]?\d*\.?\d+(?:[Ee][+-]?\d+)?/g);
-                if (nums && nums.length >= 3) {
-                    cpMap[id] = [parseFloat(nums[0]), parseFloat(nums[1]), parseFloat(nums[2])];
-                }
+                const n = args.match(/[-+]?\d*\.?\d+(?:[Ee][+-]?\d+)?/g);
+                if (n && n.length >= 3) cp[id] = [+n[0], +n[1], +n[2]];
             }
 
-            // 3. Collect geometry-bearing CPs: VERTEX_POINT + EDGE_CURVE PCPs + non-unit CPs
-            function isUnitVector(p) {
-                const mag2 = p[0]*p[0] + p[1]*p[1] + p[2]*p[2];
-                return Math.abs(mag2 - 1.0) < 1e-4; // direction vector / normal
-            }
-            function isOriginPoint(p) {
-                return Math.abs(p[0]) < 1e-9 && Math.abs(p[1]) < 1e-9 && Math.abs(p[2]) < 1e-9;
-            }
-
-            // Collect IDs from VERTEX_POINT
-            const geomIds = new Set();
+            // ── 4. VERTEX_POINT → CARTESIAN_POINT (filters out direction vectors) ─
+            //    VERTEX_POINT references only true geometry vertices, not normals/axes
+            const vpIds = new Set();
             for (const [, { type, args }] of Object.entries(emap)) {
                 if (type !== 'VERTEX_POINT') continue;
-                const refs = args.match(/#(\d+)/g);
-                if (refs) refs.forEach(r => { const id = r.slice(1); if (cpMap[id]) geomIds.add(id); });
+                (args.match(/#(\d+)/g)||[]).forEach(r => { const id=r.slice(1); if(cp[id]) vpIds.add(id); });
             }
+            const verts = vpIds.size > 0 ? [...vpIds].map(id => cp[id]) : Object.values(cp);
+            if (verts.length < 2) return null;
 
-            let verts;
-            if (geomIds.size >= 4) {
-                // Check if VERTEX_POINT bounding box seems reasonable
-                const vpCoords = [...geomIds].map(id => cpMap[id]);
-                const vxs = vpCoords.map(v => v[0]), vys = vpCoords.map(v => v[1]), vzs = vpCoords.map(v => v[2]);
-                const vpDx = Math.max(...vxs) - Math.min(...vxs);
-                const vpDy = Math.max(...vys) - Math.min(...vys);
-                const vpDz = Math.max(...vzs) - Math.min(...vzs);
-                // Also scan all non-unit, non-origin CPs to see if any extend beyond VP bbox
-                const allGeomCPs = Object.entries(cpMap)
-                    .filter(([, p]) => !isUnitVector(p) && !isOriginPoint(p))
-                    .map(([, p]) => p);
-                const axs = allGeomCPs.map(v => v[0]), ays = allGeomCPs.map(v => v[1]), azs = allGeomCPs.map(v => v[2]);
-                const allDx = allGeomCPs.length ? Math.max(...axs) - Math.min(...axs) : 0;
-                const allDy = allGeomCPs.length ? Math.max(...ays) - Math.min(...ays) : 0;
-                const allDz = allGeomCPs.length ? Math.max(...azs) - Math.min(...azs) : 0;
-                // Use the larger of the two bounding boxes (VP may miss fillet extremes)
-                const bestDx = Math.max(vpDx, allDx);
-                const bestDy = Math.max(vpDy, allDy);
-                const bestDz = Math.max(vpDz, allDz);
-                // Reconstruct full extent coords using the best bbox
-                const minX = Math.min(Math.min(...vxs), allGeomCPs.length ? Math.min(...axs) : Infinity);
-                const minY = Math.min(Math.min(...vys), allGeomCPs.length ? Math.min(...ays) : Infinity);
-                const minZ = Math.min(Math.min(...vzs), allGeomCPs.length ? Math.min(...azs) : Infinity);
-                verts = [[minX, minY, minZ], [minX+bestDx, minY+bestDy, minZ+bestDz]];
-            } else {
-                // No/few VERTEX_POINTs: filter CPs by excluding unit vectors and origin
-                const filtered = Object.values(cpMap).filter(p => !isUnitVector(p));
-                verts = filtered.length >= 2 ? filtered : Object.values(cpMap);
-            }
+            // ── 5. Bounding box ───────────────────────────────────────────────────
+            const xs=verts.map(v=>v[0]), ys=verts.map(v=>v[1]), zs=verts.map(v=>v[2]);
+            const rdx = Math.max(...xs)-Math.min(...xs);
+            const rdy = Math.max(...ys)-Math.min(...ys);
+            const rdz = Math.max(...zs)-Math.min(...zs);
 
-            if (!verts.length) return null;
+            // ── 6. Unit scale ─────────────────────────────────────────────────────
+            const um = txt.match(/SI_UNIT\s*\([^)]*\.(MILLI|CENTI|DECI|KILO)?\.\s*,\s*\.METRE\.\s*\)/i);
+            let s = 1;
+            if (um) {
+                const p = (um[1]||'').toUpperCase();
+                s = p==='MILLI'?1 : p==='CENTI'?10 : p==='DECI'?100 : p==='KILO'?1e6 : 1000;
+            } else if (Math.max(rdx,rdy,rdz) < 10) s = 1000;
+            const dx=rdx*s, dy=rdy*s, dz=rdz*s;
 
-            // 4. Bounding box
-            const xs = verts.map(v => v[0]), ys = verts.map(v => v[1]), zs = verts.map(v => v[2]);
-            let rawDx = Math.max(...xs) - Math.min(...xs);
-            let rawDy = Math.max(...ys) - Math.min(...ys);
-            let rawDz = Math.max(...zs) - Math.min(...zs);
-
-            // 5. Unit scale
-            const uM = txt.match(/SI_UNIT\s*\([^)]*\.(MILLI|CENTI|DECI|KILO)?\.\s*,\s*\.METRE\.\s*\)/i);
-            let scale = 1.0;
-            if (uM) {
-                const p = (uM[1] || '').toUpperCase();
-                scale = p === 'MILLI' ? 1 : p === 'CENTI' ? 10 : p === 'DECI' ? 100 : p === 'KILO' ? 1e6 : 1000;
-            } else if (Math.max(rawDx, rawDy, rawDz) < 10) scale = 1000;
-            const dx = rawDx * scale, dy = rawDy * scale, dz = rawDz * scale;
-
-            // 6. Fill factor: surfRatio = planes/(planes+curves)
-            let faces = 0, planes = 0, curves = 0, solids = 0;
+            // ── 7. Fill factor (surfRatio = planes / (planes+curves)) ─────────────
+            let planes=0, curves=0, solids=0;
             const CURVED = new Set(['CYLINDRICAL_SURFACE','CONICAL_SURFACE','SPHERICAL_SURFACE',
                 'TOROIDAL_SURFACE','B_SPLINE_SURFACE_WITH_KNOTS','B_SPLINE_SURFACE']);
             for (const { type } of Object.values(emap)) {
-                if (type === 'ADVANCED_FACE') faces++;
-                if (type === 'PLANE') planes++;
-                if (CURVED.has(type)) curves++;
-                if (type === 'MANIFOLD_SOLID_BREP') solids++;
+                if (type==='PLANE') planes++;
+                else if (CURVED.has(type)) curves++;
+                else if (type==='MANIFOLD_SOLID_BREP') solids++;
             }
-            const total = planes + curves;
-            const surfRatio = total > 0 ? planes / total : 0.5;
-            let fill;
-            if (surfRatio > 0.80) fill = 0.70;
-            else if (surfRatio > 0.60) fill = 0.65;
-            else if (surfRatio > 0.40) fill = 0.633;
-            else if (surfRatio > 0.20) fill = 0.60;
-            else fill = 0.55;
-            if (solids > 1) fill = Math.min(fill * 1.05, 0.85);
+            const tot = planes+curves;
+            const sr  = tot>0 ? planes/tot : 0.5;
+            // Calibrated: AL_Base_1 → bbox 6,900,000 → actual 4,368,222 → fill ≈ 0.633
+            let fill = sr>0.80 ? 0.70 : sr>0.60 ? 0.65 : sr>0.40 ? 0.633 : sr>0.20 ? 0.60 : 0.55;
+            if (solids>1) fill = Math.min(fill*1.05, 0.85);
 
-            // 7. Sort dims smallest→height, middle→width, largest→depth
-            const dims = [dx, dy, dz].map(v => Math.round(v * 100) / 100).sort((a, b) => a - b);
-            const bboxVol = dx * dy * dz;
+            // ── 8. Compute volume ─────────────────────────────────────────────────
+            const bbox = dx*dy*dz;
+            const sv   = tryStoredVol();
+            // Use stored exact value if found and physically plausible (< bbox × 1.05)
+            const vol_mm3 = (sv && sv>0 && sv<bbox*1.05)
+                ? Math.round(sv*100)/100
+                : Math.round(bbox*fill*100)/100;
 
-            // 8. Try to get stored exact volume first
-            const storedVol = tryGetStoredVolume();
-            const volume_mm3 = (storedVol && storedVol > 0 && storedVol < bboxVol * 1.1)
-                ? Math.round(storedVol * 100) / 100
-                : Math.round(bboxVol * fill * 100) / 100;
-
-            // 9. Round dims UP to nearest standard CNC stock increment
-            function toStockDim(mm) {
-                if (mm <= 0) return 0;
-                const steps = [1,2,3,4,5,6,8,10,12,15,16,18,20,22,25,28,30,32,35,38,40,
-                    45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,
-                    160,170,180,200,220,250,280,300,320,350,400,450,500,600,700,800,900,1000];
-                for (const s of steps) { if (s >= mm - 0.05) return s; }
-                return Math.ceil(mm / 50) * 50;
+            // ── 9. Sort dims + round UP to standard CNC stock sizes ───────────────
+            const dims = [dx,dy,dz].sort((a,b)=>a-b);   // [h, w, d]
+            function toStock(mm) {
+                if (mm<=0) return 0;
+                const std=[5,6,8,10,12,15,16,18,20,22,25,28,30,32,35,38,40,45,50,55,
+                    60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,200,
+                    220,250,280,300,320,350,400,450,500,600,700,800,900,1000];
+                return std.find(v=>v>=mm-0.1) || Math.ceil(mm/50)*50;
             }
-            const swStk = toStockDim(dims[1]);
-            const dwStk = toStockDim(dims[2]);
-            const hwStk = toStockDim(dims[0]);
+            const sh=toStock(dims[0]), sw=toStock(dims[1]), sd=toStock(dims[2]);
 
             return {
-                volume_mm3,
-                storedVol: storedVol || null,
-                fillFactor: fill,
+                volume_mm3: vol_mm3,
                 stock: {
                     type: 'box',
-                    stock: { width_mm: swStk, depth_mm: dwStk, height_mm: hwStk },
-                    volume_mm3: Math.round(swStk * dwStk * hwStk * 1000) / 1000
+                    stock: { width_mm:sw, depth_mm:sd, height_mm:sh },
+                    volume_mm3: Math.round(sh*sw*sd*1000)/1000
                 }
             };
         }
