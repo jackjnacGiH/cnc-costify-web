@@ -57,9 +57,8 @@ def get_vertex_coordinates(entity_map: dict) -> list:
 
 def detect_scale(content: str, dx: float, dy: float, dz: float) -> float:
     """Detect if STEP is in meters (need ×1000 to convert to mm)."""
-    # Look for unit declarations
     unit_match = re.search(
-        r'SI_UNIT\s*\([^)]*\)\s*,\s*\.\s*(MILLI|CENTI|DECI|KILO)?\s*\.\s*,\s*\.\s*METRE\s*\.',
+        r'SI_UNIT\s*\([^)]*\.(MILLI|CENTI|DECI|KILO)?\.\s*,\s*\.METRE\.\s*\)',
         content, re.IGNORECASE
     )
     if unit_match:
@@ -68,50 +67,45 @@ def detect_scale(content: str, dx: float, dy: float, dz: float) -> float:
             return 1.0
         elif prefix == 'CENTI':
             return 10.0
-        elif prefix == '':  # bare METRE
-            return 1000.0
+        elif prefix == 'DECI':
+            return 100.0
         elif prefix == 'KILO':
             return 1_000_000.0
-    # Heuristic: if all dims > 5000 they're probably in mm already,
-    # but if they're < 5 they might be in metres
+        else:  # bare METRE
+            return 1000.0
     max_dim = max(dx, dy, dz)
     if max_dim > 0 and max_dim < 10:
-        return 1000.0  # likely metres
+        return 1000.0
     return 1.0
 
 
 def compute_fill_factor(entity_map: dict) -> float:
     """
     Estimate the fill factor (actual volume / bounding box volume).
-    Uses face complexity heuristics calibrated against known parts.
+    Uses surfRatio = planes/(planes+curves) — calibrated against AL_Base_1:
+        bbox=6,900,000 mm³, actual=4,368,222 mm³  →  fill=0.633
     """
-    face_count = sum(1 for (et, _) in entity_map.values() if et == 'ADVANCED_FACE')
-    solid_count = sum(1 for (et, _) in entity_map.values() if et == 'MANIFOLD_SOLID_BREP')
-    surface_count = sum(1 for (et, _) in entity_map.values()
-                        if et in ('CYLINDRICAL_SURFACE', 'CONICAL_SURFACE', 'SPHERICAL_SURFACE',
-                                  'TOROIDAL_SURFACE', 'B_SPLINE_SURFACE_WITH_KNOTS', 'B_SPLINE_SURFACE'))
     plane_count = sum(1 for (et, _) in entity_map.values() if et == 'PLANE')
+    solid_count  = sum(1 for (et, _) in entity_map.values() if et == 'MANIFOLD_SOLID_BREP')
+    curved_types = {'CYLINDRICAL_SURFACE', 'CONICAL_SURFACE', 'SPHERICAL_SURFACE',
+                    'TOROIDAL_SURFACE', 'B_SPLINE_SURFACE_WITH_KNOTS', 'B_SPLINE_SURFACE'}
+    curve_count  = sum(1 for (et, _) in entity_map.values() if et in curved_types)
 
-    if face_count == 0:
-        return 0.5  # fallback
+    total = plane_count + curve_count
+    # surfRatio = 1.0 → all planar, 0.0 → all curved
+    surf_ratio = plane_count / total if total > 0 else 0.5
 
-    # Curved surface ratio — more curves = less fill
-    curve_ratio = surface_count / max(face_count, 1)
-    plane_ratio = plane_count / max(face_count, 1)
-
-    # Base fill: prismatic parts (all planes) ≈ 0.55–0.75
-    #            turned parts (many cylinders) ≈ 0.30–0.55
-    #            complex machined ≈ 0.45–0.65
-    if plane_ratio > 0.85:
-        # Mostly flat faces → close to a rectangular block
-        base = 0.70
-    elif curve_ratio > 0.40:
-        # Lots of curved surfaces → cylindrical or complex
-        base = 0.45
+    if surf_ratio > 0.80:
+        base = 0.70      # mostly flat → prismatic block
+    elif surf_ratio > 0.60:
+        base = 0.65      # slightly more flat than curved
+    elif surf_ratio > 0.40:
+        base = 0.633     # balanced → calibrated (AL_Base_1 reference)
+    elif surf_ratio > 0.20:
+        base = 0.60      # mostly curved (many holes/rounds)
     else:
-        base = 0.58
+        base = 0.55      # almost all curved (turned/spherical part)
 
-    # Adjust for solid count (assemblies)
     if solid_count > 1:
         base = min(base * 1.05, 0.85)
 
