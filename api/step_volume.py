@@ -79,44 +79,25 @@ def detect_scale(content: str, dx: float, dy: float, dz: float) -> float:
     return 1.0
 
 
-def compute_fill_factor(entity_map: dict) -> float:
-    """
-    Estimate the fill factor (actual volume / bounding box volume).
-    Uses surfRatio = planes/(planes+curves) — calibrated against AL_Base_1:
-        bbox=6,900,000 mm³, actual=4,368,222 mm³  →  fill=0.633
-    """
-    plane_count = sum(1 for (et, _) in entity_map.values() if et == 'PLANE')
-    solid_count  = sum(1 for (et, _) in entity_map.values() if et == 'MANIFOLD_SOLID_BREP')
-    curved_types = {'CYLINDRICAL_SURFACE', 'CONICAL_SURFACE', 'SPHERICAL_SURFACE',
-                    'TOROIDAL_SURFACE', 'B_SPLINE_SURFACE_WITH_KNOTS', 'B_SPLINE_SURFACE'}
-    curve_count  = sum(1 for (et, _) in entity_map.values() if et in curved_types)
-
-    total = plane_count + curve_count
-    # surfRatio = 1.0 → all planar, 0.0 → all curved
-    surf_ratio = plane_count / total if total > 0 else 0.5
-
-    if surf_ratio > 0.80:
-        base = 0.70      # mostly flat → prismatic block
-    elif surf_ratio > 0.60:
-        base = 0.65      # slightly more flat than curved
-    elif surf_ratio > 0.40:
-        base = 0.633     # balanced → calibrated (AL_Base_1 reference)
-    elif surf_ratio > 0.20:
-        base = 0.60      # mostly curved (many holes/rounds)
-    else:
-        base = 0.55      # almost all curved (turned/spherical part)
-
-    if solid_count > 1:
-        base = min(base * 1.05, 0.85)
-
-    return base
-
+def try_get_stored_volume(content: str):
+    import re
+    # VALUE_REPRESENTATION_ITEM('volume', VOLUME_MEASURE(val))
+    mo = re.search(r"VALUE_REPRESENTATION_ITEM\s*\(\s*'[^']*(?:volume|vol)[^']*'\s*,\s*(?:VOLUME_MEASURE|NUMERIC_MEASURE)\s*\(\s*([\d.Ee+\-]+)\s*\)", content, re.IGNORECASE)
+    if mo:
+        v = float(mo.group(1))
+        if v > 0: return v
+    # MEASURE_WITH_UNIT(VOLUME_MEASURE(val), ...)
+    mo = re.search(r"MEASURE_WITH_UNIT\s*\(\s*VOLUME_MEASURE\s*\(\s*([\d.Ee+\-]+)\s*\)", content, re.IGNORECASE)
+    if mo:
+        v = float(mo.group(1))
+        if v > 0: return v
+    return None
 
 def step_volume_and_stock(content: str) -> dict:
     entity_map = parse_step_entities(content)
     vertices = get_vertex_coordinates(entity_map)
 
-    if not vertices:
+    if not vertices or len(vertices) < 2:
         return {"error": "No vertex coordinates found in STEP file"}
 
     xs = [v[0] for v in vertices]
@@ -133,26 +114,81 @@ def step_volume_and_stock(content: str) -> dict:
     dy = raw_dy * scale
     dz = raw_dz * scale
 
-    bounding_volume = dx * dy * dz
-    fill = compute_fill_factor(entity_map)
-    volume_mm3 = bounding_volume * fill
+    # Surface counts
+    planes = 0
+    curves = 0
+    solids = 0
+    toroids = 0
+    CURVED = {'CYLINDRICAL_SURFACE', 'CONICAL_SURFACE', 'SPHERICAL_SURFACE', 'TOROIDAL_SURFACE', 'B_SPLINE_SURFACE_WITH_KNOTS', 'B_SPLINE_SURFACE'}
+    for et, _ in entity_map.values():
+        if et == 'PLANE':
+            planes += 1
+        elif et == 'TOROIDAL_SURFACE':
+            curves += 1
+            toroids += 1
+        elif et in CURVED:
+            curves += 1
+        elif et == 'MANIFOLD_SOLID_BREP':
+            solids += 1
 
-    # Sort dims for stock (H × W × D convention: smallest first)
-    dims = sorted([round(dx, 2), round(dy, 2), round(dz, 2)])
-    h, w, d = dims[0], dims[1], dims[2]
-    stock_volume = round(dx * dy * dz, 3)
+    tot = planes + curves
+    sr = planes / tot if tot > 0 else 0.5
+
+    import math
+    dims_sorted = sorted([dx, dy, dz])
+    cross_equal = dims_sorted[0] > 0 and abs(dims_sorted[0] - dims_sorted[1]) < 0.15 * dims_sorted[1]
+    is_round = toroids >= 2 and cross_equal and sr < 0.40
+
+    sv = try_get_stored_volume(content)
+
+    if is_round:
+        D = dims_sorted[0] * 2
+        L = dims_sorted[2]
+        round_stock_vol = (math.pi / 4) * D * D * L
+        if sv and 0 < sv < round_stock_vol * 1.05:
+            vol_mm3 = round(sv, 2)
+        else:
+            vol_mm3 = round(round_stock_vol * 0.42, 2)
+        stock_type = 'round'
+        stock_dims = sorted([D, D, L])
+    else:
+        fill = max(0.15, min(0.85, 1.91 * sr - 0.32))
+        bbox = dx * dy * dz
+        if sv and 0 < sv < bbox * 1.05:
+            vol_mm3 = round(sv, 2)
+        else:
+            vol_mm3 = round(bbox * fill, 2)
+        stock_type = 'box'
+        stock_dims = dims_sorted
+
+    def to_stock(mm):
+        if mm <= 0: return 0
+        std = [5,6,8,10,12,15,16,18,20,22,25,28,30,32,35,38,40,45,50,55,
+               60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,200,
+               220,250,280,300,320,350,400,450,500,600,700,800,900,1000]
+        for v in std:
+            if v >= mm - 0.1: return v
+        return math.ceil(mm / 50) * 50
+
+    sh = to_stock(stock_dims[0])
+    sw = to_stock(stock_dims[1])
+    sd = to_stock(stock_dims[2])
+
+    if is_round:
+        stock_vol = round((math.pi / 4) * sh * sw * sd, 3)
+    else:
+        stock_vol = round(sh * sw * sd, 3)
 
     return {
-        "volume_mm3": round(volume_mm3, 2),
+        "volume_mm3": vol_mm3,
         "stock": {
-            "type": "box",
+            "type": stock_type,
             "stock": {
-                "width_mm": w,
-                "depth_mm": d,
-                "height_mm": h
+                "width_mm": sw,
+                "depth_mm": sd,
+                "height_mm": sh
             },
-            "volume_mm3": stock_volume,
-            "stock_size_label": f"{h:.2f}x{w:.2f}x{d:.2f} mm"
+            "volume_mm3": stock_vol
         }
     }
 
