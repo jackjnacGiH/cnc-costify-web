@@ -289,15 +289,15 @@ function computeFillFactor(entityMap) {
         if (CURVED.includes(type)) surfaceCount++;
         if (type === 'PLANE') planeCount++;
     }
-    if (faceCount === 0) return 0.55;
-    const pr = planeCount / faceCount;
-    const cr = surfaceCount / faceCount;
-    // Calibrated: AL_Base_1 (mostly flat) → vol/bbox = 4368222/6900000 ≈ 0.633
+    // Use planes/(planes+curves) — calibrated: AL_Base_1 → bbox=6.9M → actual=4.37M → fill=0.633
+    const total = planeCount + surfaceCount;
+    const surfRatio = total > 0 ? planeCount / total : 0.5;
     let base;
-    if (pr > 0.85) base = 0.63;       // mostly planar → machined block
-    else if (cr > 0.50) base = 0.50;  // mostly curved → turned part
-    else if (cr > 0.30) base = 0.56;  // mixed
-    else base = 0.60;                 // general prismatic
+    if (surfRatio > 0.80) base = 0.70;
+    else if (surfRatio > 0.60) base = 0.65;
+    else if (surfRatio > 0.40) base = 0.633;
+    else if (surfRatio > 0.20) base = 0.60;
+    else base = 0.55;
     if (solidCount > 1) base = Math.min(base * 1.05, 0.85);
     return base;
 }

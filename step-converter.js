@@ -86,26 +86,16 @@ class StepConverter {
             if (CURVED.has(type)) curves++;
             if (type === 'MANIFOLD_SOLID_BREP') solids++;
         }
-        if (faces === 0) return 0.55;
-        const pr = planes / faces;   // plane ratio
-        const cr = curves / faces;   // curve ratio
-
-        // Calibrated against AL_Base_1 (machined block, mostly flat):
-        //   real vol = 4,368,222 / bbox vol = 6,900,000  → fill ≈ 0.633
+        // Use planes/(planes+curves) ratio — more meaningful than curves/faces
+        // Calibrated: AL_Base_1 → bbox=6,900,000 → actual=4,368,222 → fill=0.633
+        const total = planes + curves;
+        const surfRatio = total > 0 ? planes / total : 0.5;
         let f;
-        if (pr > 0.85) {
-            // Mostly planar → rectangular machined block (pockets, slots)
-            f = 0.63;
-        } else if (cr > 0.50) {
-            // Mostly curved → turned part or round stock
-            f = 0.50;
-        } else if (cr > 0.30) {
-            // Mixed (pockets + holes)
-            f = 0.56;
-        } else {
-            // General prismatic with holes/features
-            f = 0.60;
-        }
+        if (surfRatio > 0.80) f = 0.70;
+        else if (surfRatio > 0.60) f = 0.65;
+        else if (surfRatio > 0.40) f = 0.633;
+        else if (surfRatio > 0.20) f = 0.60;
+        else f = 0.55;
         if (solids > 1) f = Math.min(f * 1.05, 0.85);
         return f;
     }

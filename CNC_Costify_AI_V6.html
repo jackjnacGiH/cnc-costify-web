@@ -5046,9 +5046,17 @@
                 if (CURVED.has(type)) curves++;
                 if (type === 'MANIFOLD_SOLID_BREP') solids++;
             }
-            const pr = faces ? planes / faces : 0;
-            const cr = faces ? curves / faces : 0;
-            let fill = pr > 0.85 ? 0.63 : cr > 0.50 ? 0.50 : cr > 0.30 ? 0.56 : 0.60;
+            // surfRatio = planes/(planes+curves) : how "flat" the part is
+            //   → 1.0 = all planar, 0.0 = all curved
+            // Calibrated against AL_Base_1: bbox=6,900,000 → actual=4,368,222 → fill=0.633
+            const total = planes + curves;
+            const surfRatio = total > 0 ? planes / total : 0.5;
+            let fill;
+            if (surfRatio > 0.80) fill = 0.70;       // mostly flat surfaces → prismatic block, high fill
+            else if (surfRatio > 0.60) fill = 0.65;  // slightly more flat than curved
+            else if (surfRatio > 0.40) fill = 0.633; // balanced → calibrated (AL_Base_1 reference)
+            else if (surfRatio > 0.20) fill = 0.60;  // mostly curved (many holes/rounds)
+            else fill = 0.55;                         // almost all curved (turned/spherical part)
             if (solids > 1) fill = Math.min(fill * 1.05, 0.85);
             // 7. Sort dims: smallest→height, middle→width, largest→depth
             const dims = [dx, dy, dz].map(v => Math.round(v * 100) / 100).sort((a, b) => a - b);
