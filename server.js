@@ -279,27 +279,12 @@ function detectScale(content, dx, dy, dz) {
     return 1.0;
 }
 
-function computeFillFactor(entityMap) {
-    let faceCount = 0, solidCount = 0, surfaceCount = 0, planeCount = 0;
-    const CURVED = ['CYLINDRICAL_SURFACE', 'CONICAL_SURFACE', 'SPHERICAL_SURFACE',
-        'TOROIDAL_SURFACE', 'B_SPLINE_SURFACE_WITH_KNOTS', 'B_SPLINE_SURFACE'];
-    for (const { type } of Object.values(entityMap)) {
-        if (type === 'ADVANCED_FACE') faceCount++;
-        if (type === 'MANIFOLD_SOLID_BREP') solidCount++;
-        if (CURVED.includes(type)) surfaceCount++;
-        if (type === 'PLANE') planeCount++;
-    }
-    // Use planes/(planes+curves) — calibrated: AL_Base_1 → bbox=6.9M → actual=4.37M → fill=0.633
-    const total = planeCount + surfaceCount;
-    const surfRatio = total > 0 ? planeCount / total : 0.5;
-    let base;
-    if (surfRatio > 0.80) base = 0.70;
-    else if (surfRatio > 0.60) base = 0.65;
-    else if (surfRatio > 0.40) base = 0.633;
-    else if (surfRatio > 0.20) base = 0.60;
-    else base = 0.55;
-    if (solidCount > 1) base = Math.min(base * 1.05, 0.85);
-    return base;
+function tryGetStoredVolume(content) {
+    let mo = content.match(/VALUE_REPRESENTATION_ITEM\s*\(\s*'[^']*(?:volume|vol)[^']*'\s*,\s*(?:VOLUME_MEASURE|NUMERIC_MEASURE)\s*\(\s*([\d.Ee+\-]+)\s*\)/i);
+    if (mo) { const v = +mo[1]; if (v > 0) return v; }
+    mo = content.match(/MEASURE_WITH_UNIT\s*\(\s*VOLUME_MEASURE\s*\(\s*([\d.Ee+\-]+)\s*\)/i);
+    if (mo) { const v = +mo[1]; if (v > 0) return v; }
+    return null;
 }
 
 /**
@@ -319,15 +304,61 @@ function computeStepFromContent(content) {
     const rawDz = Math.max(...zs) - Math.min(...zs);
     const scale = detectScale(content, rawDx, rawDy, rawDz);
     const dx = rawDx * scale, dy = rawDy * scale, dz = rawDz * scale;
-    const boundingVol = dx * dy * dz;
-    const fill = computeFillFactor(entityMap);
-    const dims = [dx, dy, dz].map(v => Math.round(v * 100) / 100).sort((a, b) => a - b);
+
+    let planes = 0, curves = 0, solids = 0, toroids = 0;
+    const CURVED = new Set(['CYLINDRICAL_SURFACE', 'CONICAL_SURFACE', 'SPHERICAL_SURFACE', 'TOROIDAL_SURFACE', 'B_SPLINE_SURFACE_WITH_KNOTS', 'B_SPLINE_SURFACE']);
+    for (const { type } of Object.values(entityMap)) {
+        if (type === 'PLANE') planes++;
+        else if (type === 'TOROIDAL_SURFACE') { curves++; toroids++; }
+        else if (CURVED.has(type)) curves++;
+        else if (type === 'MANIFOLD_SOLID_BREP') solids++;
+    }
+    const tot = planes + curves;
+    const sr = tot > 0 ? planes / tot : 0.5;
+
+    const dimsSorted = [dx, dy, dz].sort((a,b)=>a-b);
+    const crossEqual = dimsSorted[0]>0 && Math.abs(dimsSorted[0]-dimsSorted[1]) < 0.15*dimsSorted[1];
+    const isRound = toroids >= 2 && crossEqual && sr < 0.40;
+
+    let vol_mm3, stockType, stockDims;
+    const sv = tryGetStoredVolume(content);
+
+    if (isRound) {
+        const D = dimsSorted[0]*2, L = dimsSorted[2];
+        const roundStockVol = Math.PI/4 * D*D * L;
+        vol_mm3 = sv && sv > 0 && sv < roundStockVol * 1.05
+            ? Math.round(sv*100)/100
+            : Math.round(roundStockVol * 0.42 * 100) / 100;
+        stockType = 'round';
+        stockDims = [D, D, L].sort((a,b)=>a-b);
+    } else {
+        const fill = Math.max(0.15, Math.min(0.85, 1.91 * sr - 0.32));
+        const bbox = dx * dy * dz;
+        vol_mm3 = sv && sv > 0 && sv < bbox * 1.05
+            ? Math.round(sv*100)/100
+            : Math.round(bbox * fill * 100) / 100;
+        stockType = 'box';
+        stockDims = dimsSorted;
+    }
+
+    function toStock(mm) {
+        if (mm<=0) return 0;
+        const std=[5,6,8,10,12,15,16,18,20,22,25,28,30,32,35,38,40,45,50,55,
+            60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,200,
+            220,250,280,300,320,350,400,450,500,600,700,800,900,1000];
+        return std.find(v=>v>=mm-0.1) || Math.ceil(mm/50)*50;
+    }
+    const sh = toStock(stockDims[0]), sw = toStock(stockDims[1]), sd = toStock(stockDims[2]);
+    const stockVol = isRound
+        ? Math.round(Math.PI/4 * sh*sw*sd * 1000) / 1000
+        : Math.round(sh*sw*sd * 1000) / 1000;
+
     return {
-        volume_mm3: Math.round(boundingVol * fill * 100) / 100,
+        volume_mm3: vol_mm3,
         stock: {
-            type: 'box',
-            stock: { width_mm: dims[1], depth_mm: dims[2], height_mm: dims[0] },
-            volume_mm3: Math.round(boundingVol * 1000) / 1000
+            type: stockType,
+            stock: { width_mm: sw, depth_mm: sd, height_mm: sh },
+            volume_mm3: stockVol
         }
     };
 }
