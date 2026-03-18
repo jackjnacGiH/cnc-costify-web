@@ -13,10 +13,10 @@ import io
 
 
 def parse_step_entities(content: str) -> dict:
-    """Build an entity map: {id_str: (type, args_str)}"""
     entity_map = {}
-    # Match: #123 = TYPE_NAME(args);
-    for m in re.finditer(r'#(\d+)\s*=\s*([A-Z_][A-Z0-9_]*)\s*\(([^;]*)\);', content, re.IGNORECASE):
+    # Allow whitespace before trailing semicolon
+    re_ent = re.compile(r'#(\d+)\s*=\s*([A-Z_][A-Z0-9_]*)\s*\(([^;]*)\)\s*;', re.IGNORECASE)
+    for m in re_ent.finditer(content):
         eid, etype, eargs = m.group(1), m.group(2).upper(), m.group(3)
         entity_map[eid] = (etype, eargs)
     return entity_map
@@ -178,8 +178,8 @@ def step_volume_and_stock(content: str) -> dict:
     def to_stock(mm):
         if mm <= 0: return 0
         std = [5,6,8,10,12,15,16,18,20,22,25,28,30,32,35,38,40,45,50,55,
-               60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,200,
-               220,250,280,300,320,350,400,450,500,600,700,800,900,1000]
+               60,65,70,75,80,85,90,92,95,98,100,110,120,130,140,150,160,170,180,200,
+               220,250,280,300,320,350,400,450,500,600,700,800,900,920,950,1000]
         for v in std:
             if v >= mm - 0.1: return v
         return math.ceil(mm / 50) * 50

@@ -223,7 +223,7 @@ app.post('/api/step/stock', stepUpload.single('file'), async (req, res) => {
  */
 function parseStepEntities(content) {
     const map = {};
-    const re = /#(\d+)\s*=\s*([A-Z_][A-Z0-9_]*)\s*\(([^;]*)\);/gi;
+    const re = /#(\d+)\s*=\s*([A-Z_][A-Z0-9_]*)\s*\(([^;]*)\)\s*;/gi;
     let m;
     while ((m = re.exec(content)) !== null) {
         map[m[1]] = { type: m[2].toUpperCase(), args: m[3] };
@@ -365,8 +365,8 @@ function computeStepFromContent(content) {
     function toStock(mm) {
         if (mm<=0) return 0;
         const std=[5,6,8,10,12,15,16,18,20,22,25,28,30,32,35,38,40,45,50,55,
-            60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,200,
-            220,250,280,300,320,350,400,450,500,600,700,800,900,1000];
+            60,65,70,75,80,85,90,92,95,98,100,110,120,130,140,150,160,170,180,200,
+            220,250,280,300,320,350,400,450,500,600,700,800,900,920,950,1000];
         return std.find(v=>v>=mm-0.1) || Math.ceil(mm/50)*50;
     }
     const sh = toStock(stockDims[0]), sw = toStock(stockDims[1]), sd = toStock(stockDims[2]);
