@@ -5150,9 +5150,12 @@
                     shapeTypeDisplay.textContent = stockData.type;
                 }
                 if (stockData.stock) {
-                    if (stockData.type === 'cylinder') {
-                        const d = Number(stockData.stock.diameter_mm || 0).toFixed(2);
-                        const L = Number(stockData.stock.length_mm || 0).toFixed(2);
+                    const isRoundType = (stockData.type === 'cylinder' || stockData.type === 'round');
+                    if (isRoundType) {
+                        const dNum = Number(stockData.stock.diameter_mm || stockData.stock.width_mm || 0);
+                        const lNum = Number(stockData.stock.length_mm || stockData.stock.height_mm || 0);
+                        const d = dNum.toFixed(2);
+                        const L = lNum.toFixed(2);
                         stockSizeDisplay.textContent = `⌀${d} x ${L} mm`;
                         const rectRadio = document.getElementById('shapeRectangle');
                         const cylRadio = document.getElementById('shapeCylinder');
@@ -5167,44 +5170,26 @@
                         try { rectInput.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) { }
                         try { cylInput.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) { }
                     } else {
+                        // PRISMATIC / BOX
                         const wNum = Number(stockData.stock.width_mm || 0);
                         const tNum = Number(stockData.stock.depth_mm || 0);
                         const hNum = Number(stockData.stock.height_mm || 0);
                         const w = wNum.toFixed(2);
                         const t = tNum.toFixed(2);
                         const h = hNum.toFixed(2);
-                        const eq = (a, b) => Math.abs(a - b) <= 0.01;
-                        let dia = null, L = null;
-                        if (eq(wNum, tNum)) { dia = wNum; L = hNum; }
-                        else if (eq(tNum, hNum)) { dia = tNum; L = wNum; }
-                        else if (eq(wNum, hNum)) { dia = wNum; L = tNum; }
-                        if (dia !== null && L !== null) {
-                            stockSizeDisplay.textContent = `⌀${dia.toFixed(2)} x ${L.toFixed(2)} mm`;
-                            const rectRadio = document.getElementById('shapeRectangle');
-                            const cylRadio = document.getElementById('shapeCylinder');
-                            cylRadio.checked = true;
-                            rectRadio.checked = false;
-                            const rectInput = document.getElementById('stockMat');
-                            const cylInput = document.getElementById('stockMatCylinder');
-                            const valCyl = `${dia.toFixed(2)}x${L.toFixed(2)}`;
-                            cylInput.value = valCyl;
-                            rectInput.value = valCyl;
-                            try { rectInput.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) { }
-                            try { cylInput.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) { }
-                        } else {
-                            stockSizeDisplay.textContent = `${h} x ${w} x ${t} mm`;
-                            const rectRadio = document.getElementById('shapeRectangle');
-                            const cylRadio = document.getElementById('shapeCylinder');
-                            rectRadio.checked = true;
-                            cylRadio.checked = false;
-                            try { rectRadio.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { }
-                            const rectInput = document.getElementById('stockMat');
-                            const cylInput = document.getElementById('stockMatCylinder');
-                            const val = `${h}x${w}x${t}`;
-                            rectInput.value = val;
-                            cylInput.value = '';
-                            try { rectInput.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) { }
-                        }
+                        
+                        stockSizeDisplay.textContent = `${h} x ${w} x ${t} mm`;
+                        const rectRadio = document.getElementById('shapeRectangle');
+                        const cylRadio = document.getElementById('shapeCylinder');
+                        rectRadio.checked = true;
+                        cylRadio.checked = false;
+                        try { rectRadio.dispatchEvent(new Event('change', { bubbles: true })); } catch (e) { }
+                        const rectInput = document.getElementById('stockMat');
+                        const cylInput = document.getElementById('stockMatCylinder');
+                        const val = `${h}x${w}x${t}`;
+                        rectInput.value = val;
+                        cylInput.value = '';
+                        try { rectInput.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) { }
                     }
                 }
                 if (typeof stockData.volume_mm3 === 'number') {
