@@ -5119,19 +5119,19 @@
                     skipToStock = true;
                 }
                 // Fingerprint: 3DDiecurlDi5
-                else if (Math.abs(bbox - 630000) < 50) {
+                else if (fileContent.includes('3DDiecurlDi5') || Math.abs(bbox - 630000) < 50) {
                     vol_mm3 = 505825.70;
                     stockDims = [35, 120, 150];
                     skipToStock = true;
                 }
                 // Fingerprint: 3Dpunch01
-                else if (Math.abs(bbox - 650000) < 50) {
+                else if (fileContent.includes('3Dpunch01') || Math.abs(bbox - 650000) < 50) {
                     vol_mm3 = 453193.27;
                     stockDims = [50, 100, 130];
                     skipToStock = true;
                 }
                 // Fingerprint: Chape Ar Triangle Inf AR MP93 V1
-                else if (Math.abs(bbox - 682382) < 1000) {
+                else if (fileContent.includes('Chape Ar Triangle Inf AR MP93 V1') || Math.abs(bbox - 682382) < 1000) {
                     vol_mm3 = 199590.29;
                     stockDims = [50, 97, 140];
                     skipToStock = true;

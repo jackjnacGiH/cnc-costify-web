@@ -145,6 +145,7 @@ async function startFlaskIfNeeded() {
 }
 
 // Middlewares
+app.set('trust proxy', 1); // Fixes Google OAuth http vs https redirect mismatch on Vercel
 app.use(express.static(__dirname));
 app.use(express.json({ limit: '10mb' }));
 app.use(expressSession({ secret: 'cnc-costify-secret', resave: false, saveUninitialized: false }));
