@@ -5278,19 +5278,27 @@
                         try {
                             const fd = new FormData();
                             fd.append('file', file);
-                            console.log('Attempting to connect to Local CNC Costify Engine (PythonOCC) for 100% exact volume...');
-                            const localUrl = `http://127.0.0.1:5000/api/step/volume`;
-                            const resp = await fetch(localUrl, { method: 'POST', body: fd, signal: AbortSignal.timeout(3000) });
-                            if (resp.ok) {
-                                const data = await resp.json();
-                                if (data && typeof data.volume_mm3 === 'number' && data.volume_mm3 > 0) {
-                                    localData = data;
-                                    calculatedVolume = data.volume_mm3;
-                                    console.log('Successfully connected to Local FreeCAD/PythonOCC Engine! Exact Volume:', calculatedVolume);
-                                    if (data.stock) {
-                                        applyStockData(data.stock);
-                                        stockApplied = true;
-                                    }
+                            console.log('Attempting to connect to Local CNC Costify Engine (PythonOCC) on ports 5001/5002...');
+                            const tryLocal = async (port) => {
+                                const url = `http://127.0.0.1:${port}/api/step/volume`;
+                                const resp = await fetch(url, { method: 'POST', body: fd, signal: AbortSignal.timeout(3000) });
+                                if (!resp.ok) throw new Error('Bad response');
+                                return await resp.json();
+                            };
+                            
+                            let data = null;
+                            try { data = await tryLocal(5001); } catch (e) {}
+                            if (!data) {
+                                try { data = await tryLocal(5002); } catch (e) {}
+                            }
+                            
+                            if (data && typeof data.volume_mm3 === 'number' && data.volume_mm3 > 0) {
+                                localData = data;
+                                calculatedVolume = data.volume_mm3;
+                                console.log('Successfully connected to Local FreeCAD/PythonOCC Engine! Exact Volume:', calculatedVolume);
+                                if (data.stock) {
+                                    applyStockData(data.stock);
+                                    stockApplied = true;
                                 }
                             }
                         } catch (err) {
