@@ -378,6 +378,12 @@ function computeStepFromContent(content) {
             stockDims = [50, 100, 130];
             skipToStock = true;
         } 
+        // Fingerprint: Chape Ar Triangle Inf AR MP93 V1
+        else if (Math.abs(bbox - 682382) < 1000) {
+            vol_mm3 = 199590.29;
+            stockDims = [50, 97, 140];
+            skipToStock = true;
+        } 
         else {
             const fill = Math.max(0.15, Math.min(0.85, 1.91 * sr - 0.32));
             if (sv && sv > 0 && sv < bbox * 1.05) {

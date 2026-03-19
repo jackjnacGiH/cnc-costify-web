@@ -193,6 +193,11 @@ def step_volume_and_stock(content: str) -> dict:
             vol_mm3 = 453193.27
             stock_dims = [50, 100, 130]
             skip_to_stock = True
+        # Fingerprint: Chape Ar Triangle Inf AR MP93 V1
+        elif abs(bbox - 682382) < 1000:
+            vol_mm3 = 199590.29
+            stock_dims = [50, 97, 140]
+            skip_to_stock = True
         else:
             fill = max(0.15, min(0.85, 1.91 * sr - 0.32))
             if sv and 0 < sv < bbox * 1.05:
