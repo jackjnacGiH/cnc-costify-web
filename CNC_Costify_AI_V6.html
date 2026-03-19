@@ -5273,30 +5273,53 @@
                             calculatedVolume = inlineResult.volume_mm3;
                         }
 
-                        // === STEP 2: Try server API for potentially more accurate volume ===
-                        let serverData = null;
+                        // === STEP 2: Try Local Desktop App API (100% precise PythonOCC) ===
+                        let localData = null;
                         try {
                             const fd = new FormData();
                             fd.append('file', file);
-                            const apiUrl = `${getBackendBaseUrl()}/api/step/volume`;
-                            const resp = await fetch(apiUrl, { method: 'POST', body: fd, signal: AbortSignal.timeout(15000) });
+                            console.log('Attempting to connect to Local CNC Costify Engine (PythonOCC) for 100% exact volume...');
+                            const localUrl = `http://127.0.0.1:5000/api/step/volume`;
+                            const resp = await fetch(localUrl, { method: 'POST', body: fd, signal: AbortSignal.timeout(3000) });
                             if (resp.ok) {
                                 const data = await resp.json();
                                 if (data && typeof data.volume_mm3 === 'number' && data.volume_mm3 > 0) {
-                                    serverData = data;
+                                    localData = data;
                                     calculatedVolume = data.volume_mm3;
-                                    // If server also returned stock and inline didn't work, apply it
-                                    if (!stockApplied && data.stock) {
+                                    console.log('Successfully connected to Local FreeCAD/PythonOCC Engine! Exact Volume:', calculatedVolume);
+                                    if (data.stock) {
                                         applyStockData(data.stock);
                                         stockApplied = true;
                                     }
                                 }
                             }
                         } catch (err) {
-                            console.warn('Server STEP API unavailable, using inline result:', err.message);
+                            console.log('Local PythonOCC Engine not running or unreachable. Falling back to Cloud Serverless Engine...');
                         }
 
-                        // === STEP 3: Ultimate fallback if nothing worked ===
+                        // === STEP 3: Fallback to Cloud Serverless API (Heuristics) ===
+                        if (!localData) {
+                            try {
+                                const fd = new FormData();
+                                fd.append('file', file);
+                                const apiUrl = `${getBackendBaseUrl()}/api/step/volume`;
+                                const resp = await fetch(apiUrl, { method: 'POST', body: fd, signal: AbortSignal.timeout(15000) });
+                                if (resp.ok) {
+                                    const data = await resp.json();
+                                    if (data && typeof data.volume_mm3 === 'number' && data.volume_mm3 > 0) {
+                                        calculatedVolume = data.volume_mm3;
+                                        if (!stockApplied && data.stock) {
+                                            applyStockData(data.stock);
+                                            stockApplied = true;
+                                        }
+                                    }
+                                }
+                            } catch (err) {
+                                console.warn('Cloud Serverless STEP API unavailable, using inline result:', err.message);
+                            }
+                        }
+
+                        // === STEP 4: Ultimate fallback if nothing worked ===
                         if (!calculatedVolume || calculatedVolume <= 0) {
                             calculatedVolume = await converter.calculateVolumeFromSTEP(fileContent, file.name);
                         }
