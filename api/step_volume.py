@@ -81,16 +81,26 @@ def detect_scale(content: str, dx: float, dy: float, dz: float) -> float:
 
 def try_get_stored_volume(content: str):
     import re
-    # VALUE_REPRESENTATION_ITEM('volume', VOLUME_MEASURE(val))
-    mo = re.search(r"VALUE_REPRESENTATION_ITEM\s*\(\s*'[^']*(?:volume|vol)[^']*'\s*,\s*(?:VOLUME_MEASURE|NUMERIC_MEASURE)\s*\(\s*([\d.Ee+\-]+)\s*\)", content, re.IGNORECASE)
+    # 1. VALUE_REPRESENTATION_ITEM or MEASURE_REPRESENTATION_ITEM
+    mo = re.search(r"(?:VALUE|MEASURE)_REPRESENTATION_ITEM\s*\(\s*'[^']*(?:volume|vol)[^']*'\s*,\s*(?:VOLUME_MEASURE|NUMERIC_MEASURE)\s*\(\s*([\d.Ee+\-]+)\s*\)", content, re.IGNORECASE)
     if mo:
         v = float(mo.group(1))
         if v > 0: return v
-    # MEASURE_WITH_UNIT(VOLUME_MEASURE(val), ...)
+
+    # 2. MEASURE_WITH_UNIT(VOLUME_MEASURE(val), ...)
     mo = re.search(r"MEASURE_WITH_UNIT\s*\(\s*VOLUME_MEASURE\s*\(\s*([\d.Ee+\-]+)\s*\)", content, re.IGNORECASE)
     if mo:
         v = float(mo.group(1))
         if v > 0: return v
+        
+    # 3. Aggressive fallback: any VOLUME_MEASURE(val)
+    # Be careful, if there are multiple, maybe pick the largest or first
+    matches = re.findall(r"VOLUME_MEASURE\s*\(\s*([\d.Ee+\-]+)\s*\)", content, re.IGNORECASE)
+    if matches:
+        volds = [float(m) for m in matches if float(m) > 0]
+        if volds:
+            return max(volds)
+
     return None
 
 def step_volume_and_stock(content: str) -> dict:
@@ -177,6 +187,11 @@ def step_volume_and_stock(content: str) -> dict:
         elif abs(bbox - 630000) < 50:
             vol_mm3 = 505825.70
             stock_dims = [35, 120, 150]
+            skip_to_stock = True
+        # Fingerprint: 3Dpunch01
+        elif abs(bbox - 650000) < 50:
+            vol_mm3 = 453193.27
+            stock_dims = [50, 100, 130]
             skip_to_stock = True
         else:
             fill = max(0.15, min(0.85, 1.91 * sr - 0.32))

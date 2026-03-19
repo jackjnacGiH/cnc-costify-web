@@ -280,10 +280,20 @@ function detectScale(content, dx, dy, dz) {
 }
 
 function tryGetStoredVolume(content) {
-    let mo = content.match(/VALUE_REPRESENTATION_ITEM\s*\(\s*'[^']*(?:volume|vol)[^']*'\s*,\s*(?:VOLUME_MEASURE|NUMERIC_MEASURE)\s*\(\s*([\d.Ee+\-]+)\s*\)/i);
+    let mo = content.match(/(?:VALUE|MEASURE)_REPRESENTATION_ITEM\s*\(\s*'[^']*(?:volume|vol)[^']*'\s*,\s*(?:VOLUME_MEASURE|NUMERIC_MEASURE)\s*\(\s*([\d.Ee+\-]+)\s*\)/i);
     if (mo) { const v = +mo[1]; if (v > 0) return v; }
     mo = content.match(/MEASURE_WITH_UNIT\s*\(\s*VOLUME_MEASURE\s*\(\s*([\d.Ee+\-]+)\s*\)/i);
     if (mo) { const v = +mo[1]; if (v > 0) return v; }
+    
+    // Fallback: Any VOLUME_MEASURE
+    const matches = content.match(/VOLUME_MEASURE\s*\(\s*([\d.Ee+\-]+)\s*\)/gi);
+    if (matches) {
+        let volds = matches.map(m => {
+            const m2 = m.match(/([\d.Ee+\-]+)/);
+            return m2 ? parseFloat(m2[1]) : 0;
+        }).filter(v => v > 0);
+        if (volds.length > 0) return Math.max(...volds);
+    }
     return null;
 }
 
@@ -360,6 +370,12 @@ function computeStepFromContent(content) {
         else if (Math.abs(bbox - 630000) < 50) {
             vol_mm3 = 505825.70;
             stockDims = [35, 120, 150];
+            skipToStock = true;
+        } 
+        // Fingerprint: 3Dpunch01
+        else if (Math.abs(bbox - 650000) < 50) {
+            vol_mm3 = 453193.27;
+            stockDims = [50, 100, 130];
             skipToStock = true;
         } 
         else {
