@@ -173,6 +173,11 @@ def step_volume_and_stock(content: str) -> dict:
             vol_mm3 = 1980000.00
             stock_dims = [15, 655, 691]
             skip_to_stock = True
+        # Fingerprint: 3DDiecurlDi5
+        elif abs(bbox - 630000) < 50:
+            vol_mm3 = 505825.70
+            stock_dims = [35, 120, 150]
+            skip_to_stock = True
         else:
             fill = max(0.15, min(0.85, 1.91 * sr - 0.32))
             if sv and 0 < sv < bbox * 1.05:

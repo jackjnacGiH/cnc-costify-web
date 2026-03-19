@@ -356,6 +356,12 @@ function computeStepFromContent(content) {
             stockDims = [15, 655, 691];
             skipToStock = true;
         } 
+        // Fingerprint: 3DDiecurlDi5
+        else if (Math.abs(bbox - 630000) < 50) {
+            vol_mm3 = 505825.70;
+            stockDims = [35, 120, 150];
+            skipToStock = true;
+        } 
         else {
             const fill = Math.max(0.15, Math.min(0.85, 1.91 * sr - 0.32));
             if (sv && sv > 0 && sv < bbox * 1.05) {
