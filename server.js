@@ -219,6 +219,65 @@ app.post('/api/step/stock', stepUpload.single('file'), async (req, res) => {
     }
 });
 
+// Debug endpoint: returns raw parsing diagnostics to help fix volume=0 issues
+app.post('/api/step/debug', stepUpload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ ok: false, error: 'No file uploaded' });
+        const fileContent = req.file.buffer.toString('utf8');
+        const entityMap = parseStepEntities(fileContent);
+        const vertices  = getVertexCoordinates(entityMap);
+        const sv        = tryGetStoredVolume(fileContent);
+
+        // Count entity types
+        const typeCounts = {};
+        for (const { type } of Object.values(entityMap)) {
+            typeCounts[type] = (typeCounts[type] || 0) + 1;
+        }
+        const sorted = Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]).slice(0,30);
+
+        // Unit check
+        const unitMatch = fileContent.match(/SI_UNIT\s*\([^)]*\.(MILLI|CENTI|DECI|KILO)?\.\s*,\s*\.METRE\.\s*\)/i);
+        
+        // Sample CPs
+        const cpMap = {};
+        for (const [id, { type, args }] of Object.entries(entityMap)) {
+            if (type === 'CARTESIAN_POINT') {
+                const nums = args.match(/[-+]?\d*\.?\d+(?:[Ee][+-]?\d+)?/g);
+                if (nums && nums.length >= 3) cpMap[id] = [+nums[0], +nums[1], +nums[2]];
+            }
+        }
+        const cpSample = Object.entries(cpMap).slice(0,10).map(([id,v])=>({id,coords:v}));
+
+        let bboxInfo = null;
+        if (vertices && vertices.length >= 2) {
+            const xs=vertices.map(v=>v[0]), ys=vertices.map(v=>v[1]), zs=vertices.map(v=>v[2]);
+            bboxInfo = {
+                dx: Math.max(...xs)-Math.min(...xs),
+                dy: Math.max(...ys)-Math.min(...ys),
+                dz: Math.max(...zs)-Math.min(...zs),
+                vertexCount: vertices.length
+            };
+        }
+
+        return res.json({
+            ok: true,
+            fileSize: fileContent.length,
+            entityCount: Object.keys(entityMap).length,
+            vertexCount: vertices ? vertices.length : 0,
+            storedVolume: sv,
+            unitDeclaration: unitMatch ? unitMatch[0] : null,
+            topEntityTypes: sorted,
+            cartesianPointCount: Object.keys(cpMap).length,
+            cpSample,
+            bboxInfo,
+            computeResult: computeStepFromContent(fileContent)
+        });
+    } catch (e) {
+        return res.status(500).json({ ok: false, error: String(e), stack: e.stack });
+    }
+});
+
+
 /**
  * Parse STEP content: build entity map { id: { type, args } }
  */

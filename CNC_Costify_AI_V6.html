@@ -5392,19 +5392,34 @@
                         updateTotalPriceDisplay();
 
                     } catch (error) {
-                        // Remove processing message (disabled)
+                        console.error('[STEP Upload] Exception in try block:', error.message, error.stack);
+                        // Remove processing message
                         if (processingMsg) processingMsg.remove();
 
                         // Clear any existing status messages first
                         const existingMessages = fileNameDisplay.parentNode.querySelectorAll('.text-xs');
                         existingMessages.forEach(msg => {
-                            if (msg !== fileNameDisplay) {
-                                msg.remove();
-                            }
+                            if (msg !== fileNameDisplay) msg.remove();
                         });
 
-                        // แสดงผลลัพธ์ปริมาตรจาก API/Heuristic
-                        volumeInput.value = (calculatedVolume || 0).toFixed(6);
+                        // Rescue: if we have fileContent, try aggressive converter one more time
+                        if (fileContent && (!calculatedVolume || calculatedVolume <= 0)) {
+                            try {
+                                const rescueConverter = new StepConverter();
+                                const rescueResult = rescueConverter._computeFromContent(fileContent);
+                                if (rescueResult && rescueResult.volume_mm3 > 0) {
+                                    calculatedVolume = rescueResult.volume_mm3;
+                                    if (rescueResult.stock) applyStockData(rescueResult.stock);
+                                    console.log('[STEP Upload] Rescue converter succeeded:', calculatedVolume);
+                                }
+                            } catch(rescueErr) {
+                                console.warn('[STEP Upload] Rescue converter also failed:', rescueErr.message);
+                            }
+                        }
+
+                        // Show volume with 2 decimal places (same as success path)
+                        const catchVolume = calculatedVolume > 0 ? calculatedVolume : 0;
+                        volumeInput.value = catchVolume > 0 ? catchVolume.toFixed(2) : '0.00';
                         const successMsg = document.createElement('div');
                         successMsg.className = 'text-xs text-green-600 mt-1';
                         successMsg.textContent = translations[currentLang].processingCompleted;
