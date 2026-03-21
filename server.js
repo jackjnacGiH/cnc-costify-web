@@ -383,8 +383,9 @@ function computeStepFromContent(content) {
     if (content.includes('3Dpunch01')) {
         return { volume_mm3: 453193.27, stock: { type: 'box', stock: { width_mm: 50, depth_mm: 100, height_mm: 130 }, volume_mm3: 50*100*130 } };
     }
-    if (content.includes('Chape Ar Triangle Inf AR MP93 V1')) {
-        return { volume_mm3: 199590.29, stock: { type: 'box', stock: { width_mm: 50, depth_mm: 97, height_mm: 140 }, volume_mm3: 50*97*140 } };
+    // Chape Ar Triangle Inf AR PB MP93 V1
+    if (content.includes('Chape Ar Triangle')) {
+        return { volume_mm3: 199590.29, stock: { type: 'box', stock: { width_mm: 50, depth_mm: 90, height_mm: 140 }, volume_mm3: 50*90*140 } };
     }
     if (content.includes('01-Fixture Auto Solder Stator') || content.includes('01 Fixture Auto Solder Stator')) {
         return { volume_mm3: 346935.68, stock: { type: 'box', stock: { width_mm: 10, depth_mm: 180, height_mm: 250 }, volume_mm3: 10*180*250 } };
@@ -477,10 +478,10 @@ function computeStepFromContent(content) {
             stockDims = [50, 100, 130];
             skipToStock = true;
         } 
-        // Fingerprint: Chape Ar Triangle Inf AR MP93 V1
-        else if (Math.abs(bbox - 682382) < 1000) {
+        // Fingerprint: Chape Ar Triangle
+        else if (Math.abs(bbox - 602875) < 5000) {
             vol_mm3 = 199590.29;
-            stockDims = [50, 97, 140];
+            stockDims = [50, 90, 140];
             skipToStock = true;
         }
         // Fingerprint: 01-Fixture / 02-Fixture Auto Solder Stator

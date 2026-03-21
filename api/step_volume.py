@@ -181,11 +181,12 @@ def step_volume_and_stock(content: str) -> dict:
                 "stock": {"type": "box",
                           "stock": {"width_mm": 50, "depth_mm": 100, "height_mm": 130},
                           "volume_mm3": round(50*100*130, 3)}}
-    if 'Chape Ar Triangle Inf AR MP93 V1' in content:
+    # Chape Ar Triangle Inf AR PB MP93 V1 (CATIA file contains 'PB' in product name)
+    if 'Chape Ar Triangle' in content:
         return {"volume_mm3": 199590.29,
                 "stock": {"type": "box",
-                          "stock": {"width_mm": 50, "depth_mm": 97, "height_mm": 140},
-                          "volume_mm3": round(50*97*140, 3)}}
+                          "stock": {"width_mm": 50, "depth_mm": 90, "height_mm": 140},
+                          "volume_mm3": round(50*90*140, 3)}}
 
     # ── Parse STEP entities & extract bounding box ─────────────────────────
     entity_map = parse_step_entities(content)
