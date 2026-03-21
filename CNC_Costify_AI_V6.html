@@ -5056,15 +5056,34 @@
                 if (n && n.length >= 3) cp[id] = [+n[0], +n[1], +n[2]];
             }
 
-            // ── 4. VERTEX_POINT → CARTESIAN_POINT (filters out direction vectors) ─
-            //    VERTEX_POINT references only true geometry vertices, not normals/axes
+            // ── 4. VERTEX_POINT → CARTESIAN_POINT (Strategy A) ───────────────────
             const vpIds = new Set();
             for (const [, { type, args }] of Object.entries(emap)) {
                 if (type !== 'VERTEX_POINT') continue;
                 (args.match(/#(\d+)/g)||[]).forEach(r => { const id=r.slice(1); if(cp[id]) vpIds.add(id); });
             }
-            const verts = vpIds.size > 0 ? [...vpIds].map(id => cp[id]) : Object.values(cp);
-            if (verts.length < 2) return null;
+
+            let verts;
+            if (vpIds.size > 0) {
+                verts = [...vpIds].map(id => cp[id]);
+            } else {
+                // Strategy B: filter out unit-magnitude direction vectors
+                const allPts = Object.values(cp);
+                const isDir = ([x,y,z]) => { const m=Math.sqrt(x*x+y*y+z*z); return Math.abs(m-1)<0.05&&Math.abs(x)<=1.5&&Math.abs(y)<=1.5&&Math.abs(z)<=1.5; };
+                const geom = allPts.filter(p=>!isDir(p));
+                verts = geom.length >= 2 ? geom : allPts;
+            }
+
+            if (verts.length < 2) {
+                // Last resort: try stored volume
+                const svLR = tryStoredVol();
+                if (svLR && svLR > 0) {
+                    const sk = toStockInline(Math.cbrt(svLR));
+                    return { volume_mm3: Math.round(svLR*100)/100,
+                             stock: { type:'box', stock:{width_mm:sk,depth_mm:sk,height_mm:sk}, volume_mm3:Math.round(sk*sk*sk*1000)/1000 } };
+                }
+                return null;
+            }
 
             // ── 5. Bounding box ───────────────────────────────────────────────────
             const xs=verts.map(v=>v[0]), ys=verts.map(v=>v[1]), zs=verts.map(v=>v[2]);
@@ -5170,16 +5189,16 @@
             }
 
             // ── 10. Round dims UP to standard CNC stock sizes ────────────────────
-            function toStock(mm) {
+            function toStockInline(mm) {
                 if (mm<=0) return 0;
                 const std=[5,6,8,10,12,15,16,18,20,22,25,28,30,32,35,38,40,45,50,55,
                     60,65,70,75,80,85,90,92,95,98,100,110,120,130,140,150,160,170,180,200,
                     220,250,280,300,320,350,400,450,500,600,700,800,900,920,950,1000];
                 return std.find(v=>v>=mm-0.1) || Math.ceil(mm/50)*50;
             }
-            const sh = skipToStock ? stockDims[0] : toStock(stockDims[0]);
-            const sw = skipToStock ? stockDims[1] : toStock(stockDims[1]);
-            const sd = skipToStock ? stockDims[2] : toStock(stockDims[2]);
+            const sh = skipToStock ? stockDims[0] : toStockInline(stockDims[0]);
+            const sw = skipToStock ? stockDims[1] : toStockInline(stockDims[1]);
+            const sd = skipToStock ? stockDims[2] : toStockInline(stockDims[2]);
             const stockVol = isRound
                 ? Math.round(Math.PI/4*sh*sw*sd*1000)/1000
                 : Math.round(sh*sw*sd*1000)/1000;

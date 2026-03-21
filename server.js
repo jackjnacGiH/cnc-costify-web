@@ -233,9 +233,9 @@ function parseStepEntities(content) {
 }
 
 /**
- * Get CARTESIAN_POINT values for VERTEX_POINT entities only.
- * Falls back to all CARTESIAN_POINTs if no VERTEX_POINT found.
- * This avoids picking up direction vectors which have huge coordinate values.
+ * AGGRESSIVE coordinate extraction:
+ * Strategy A: follow VERTEX_POINT → CARTESIAN_POINT (avoids direction vectors)
+ * Strategy B: all CARTESIAN_POINTs — filter out unit-magnitude direction vectors
  */
 function getVertexCoordinates(entityMap) {
     // Build CP lookup
@@ -249,7 +249,7 @@ function getVertexCoordinates(entityMap) {
         }
     }
 
-    // Find vertex point references
+    // Strategy A: follow VERTEX_POINT references
     const vpIds = new Set();
     for (const [, { type, args }] of Object.entries(entityMap)) {
         if (type === 'VERTEX_POINT') {
@@ -257,12 +257,16 @@ function getVertexCoordinates(entityMap) {
             if (refs) refs.forEach(r => { const id = r.slice(1); if (cpMap[id]) vpIds.add(id); });
         }
     }
+    if (vpIds.size > 0) return [...vpIds].map(id => cpMap[id]);
 
-    if (vpIds.size > 0) {
-        return [...vpIds].map(id => cpMap[id]);
-    }
-    // Fallback: all CPs
-    return Object.values(cpMap);
+    // Strategy B: all CPs — filter unit-magnitude direction vectors
+    const allPts = Object.values(cpMap);
+    const isDirection = ([x,y,z]) => {
+        const mag = Math.sqrt(x*x+y*y+z*z);
+        return Math.abs(mag-1.0)<0.05 && Math.abs(x)<=1.5 && Math.abs(y)<=1.5 && Math.abs(z)<=1.5;
+    };
+    const geomPts = allPts.filter(p => !isDirection(p));
+    return geomPts.length >= 2 ? geomPts : allPts;
 }
 
 function detectScale(content, dx, dy, dz) {
@@ -327,6 +331,14 @@ function computeStepFromContent(content) {
     const entityMap = parseStepEntities(content);
     const vertices = getVertexCoordinates(entityMap);
     if (!vertices || vertices.length < 2) {
+        // Final fallback: use stored volume from STEP metadata if available
+        const svFallback = tryGetStoredVolume(content);
+        if (svFallback && svFallback > 0) {
+            const side = Math.cbrt(svFallback);
+            const sk = toStockSingle(side);
+            return { volume_mm3: Math.round(svFallback*100)/100,
+                     stock: { type:'box', stock:{width_mm:sk,depth_mm:sk,height_mm:sk}, volume_mm3:Math.round(sk*sk*sk*1000)/1000 } };
+        }
         return { error: 'No vertex coordinates found', volume_mm3: 0 };
     }
     const xs = vertices.map(v => v[0]);
@@ -442,6 +454,15 @@ function computeStepFromContent(content) {
             volume_mm3: stockVol
         }
     };
+}
+
+// Helper: toStock without inner function scope (for fallback use)
+function toStockSingle(mm) {
+    if (mm<=0) return 0;
+    const std=[5,6,8,10,12,15,16,18,20,22,25,28,30,32,35,38,40,45,50,55,
+        60,65,70,75,80,85,90,92,95,98,100,110,120,130,140,150,160,170,180,200,
+        220,250,280,300,320,350,400,450,500,600,700,800,900,920,950,1000];
+    return std.find(v=>v>=mm-0.1) || Math.ceil(mm/50)*50;
 }
 
 
