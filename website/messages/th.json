@@ -1,0 +1,283 @@
+{
+  "Brand": {
+    "name": "CNC Costify AI",
+    "version": "V5.0",
+    "tagline": "คำนวณราคา CNC ด้วย AI ใน 5 วินาที"
+  },
+  "Nav": {
+    "features": "ฟีเจอร์",
+    "pricing": "ราคา",
+    "docs": "คู่มือ",
+    "download": "ดาวน์โหลด",
+    "contact": "ติดต่อ",
+    "about": "เกี่ยวกับ",
+    "login": "เข้าสู่ระบบ",
+    "signup": "สมัครฟรี",
+    "tryFree": "ทดลองใช้ฟรี"
+  },
+  "Hero": {
+    "badge": "🎉 เปิดตัว V5.0 — ลด 50% ทุกแพ็กเกจ",
+    "headline": "คำนวณราคา CNC ด้วย AI",
+    "headlineHighlight": "ใน 5 วินาที",
+    "subheadline": "วิเคราะห์ไฟล์ STEP / PDF / JPG อัตโนมัติ ด้วย AI พร้อมฐานข้อมูลวัสดุ 100+ รายการ บันทึกผลลัพธ์ลง Excel ได้ทันที",
+    "ctaPrimary": "ทดลองใช้ฟรี",
+    "ctaSecondary": "ดูแพ็กเกจ",
+    "stats": {
+      "files": "ไฟล์ที่วิเคราะห์",
+      "materials": "วัสดุในระบบ",
+      "speed": "ความเร็วเฉลี่ย",
+      "speedValue": "5 วิ/ไฟล์"
+    }
+  },
+  "Features": {
+    "title": "ทุกอย่างที่คุณต้องการ คำนวณราคา CNC ครบในที่เดียว",
+    "subtitle": "ออกแบบมาเฉพาะสำหรับโรงงาน CNC ในไทย — ใช้ง่าย แม่นยำ บันทึกได้",
+    "items": {
+      "step": {
+        "title": "วิเคราะห์ไฟล์ STEP อัตโนมัติ",
+        "desc": "อัปโหลด .step / .stp ระบบใช้ OpenCASCADE คำนวณปริมาตร + Stock Size อัตโนมัติ ไม่ต้องวัดเอง"
+      },
+      "pdfjpg": {
+        "title": "AI วิเคราะห์ PDF/JPG แบบงาน",
+        "desc": "อัปโหลดไฟล์แบบงานเป็น PDF/JPG/PNG ได้ทีละหลายไฟล์ AI ดึง Material, Stock Size, Coating, Tolerance, รูเจาะ ฯลฯ ออกมาให้"
+      },
+      "calc": {
+        "title": "คำนวณราคาอัตโนมัติ",
+        "desc": "Material + CNC + Setup + Coating + Surface + Wire Cut คำนวณตามสูตรของบริษัทคุณ พร้อม Precision Base 1-20 ระดับ"
+      },
+      "excel": {
+        "title": "บันทึกลง Excel ทันที",
+        "desc": "ผลลัพธ์ทุกการคำนวณบันทึกลงไฟล์ Excel ของคุณ ในรูปแบบ Format สวยงามพร้อม sheet แยกตามวัน + ยอดรวมไฮไลต์"
+      },
+      "ai": {
+        "title": "Multi-AI Engine",
+        "desc": "Gemini เป็นหลัก + OpenRouter (Qwen, GLM, Claude, Llama) เป็น fallback อัตโนมัติเมื่อ quota เต็ม"
+      },
+      "chat": {
+        "title": "AI Chat ปรึกษาวัสดุ",
+        "desc": "สอบถาม Density, Spec วัสดุ, การชุบแข็ง, Coating, Tolerance, Welding และอื่นๆ — ตอบเร็วใน 2 วินาที"
+      }
+    }
+  },
+  "Pricing": {
+    "title": "เลือกแพ็กเกจที่เหมาะกับคุณ",
+    "subtitle": "Free ใช้งานฟีเจอร์พื้นฐานได้ฟรีตลอด — แพ็กเกจจ่ายเงินเพิ่มฟีเจอร์ AI ขั้นสูง (PDF/JPG, Multi-AI, AI Chat) และไฟล์ไม่จำกัด",
+    "promoBadge": "🎉 โปรโมชั่นเปิดตัว — ลด 50% ทุกแพ็กเกจ",
+    "originalPrice": "ราคาปกติ",
+    "perDay": "ไฟล์/วัน",
+    "unlimited": "ไม่จำกัด",
+    "perMonth": "/เดือน",
+    "perYear": "/ปี",
+    "lifetime": "ตลอดชีพ",
+    "billed": {
+      "monthly": "ชำระรายเดือน",
+      "yearly": "ชำระรายปี",
+      "lifetime": "ชำระครั้งเดียว"
+    },
+    "tiers": {
+      "free": {
+        "name": "Free",
+        "tagline": "ทดลองใช้งาน",
+        "cta": "เริ่มใช้ฟรี"
+      },
+      "monthly": {
+        "name": "Monthly",
+        "tagline": "ใช้งานต่อเนื่อง",
+        "badge": "⭐ Popular",
+        "cta": "สมัครรายเดือน"
+      },
+      "yearly": {
+        "name": "Yearly",
+        "tagline": "คุ้มค่าที่สุด ประหยัด ~58%",
+        "badge": "💎 Best Value",
+        "cta": "ซื้อรายปี"
+      },
+      "lifetime": {
+        "name": "Lifetime",
+        "tagline": "จ่ายครั้งเดียว ใช้ตลอดชีพ",
+        "badge": "👑 Ultimate",
+        "cta": "ซื้อตลอดชีพ"
+      }
+    },
+    "features": {
+      "title": "ฟีเจอร์ทั้งหมดของระบบ",
+      "subtitleAll": "ฟีเจอร์ที่ได้ทุกแพ็กเกจ (Free / Monthly / Yearly / Lifetime)",
+      "subtitlePaid": "ฟีเจอร์เฉพาะแพ็กเกจจ่ายเงิน (Monthly / Yearly / Lifetime เท่านั้น)",
+      "step": "📐 อัปโหลด STEP วิเคราะห์ปริมาตร + Stock Size อัตโนมัติ",
+      "pdfjpg": "🖼️ อัปโหลด PDF/JPG ให้ AI วิเคราะห์แบบงาน (Multi-file)",
+      "ai": "🤖 AI ดึงข้อมูล Material, Stock, Coating, Tolerance, รูเจาะ",
+      "calc": "💰 คำนวณราคาอัตโนมัติ Material + CNC + Setup + Coating",
+      "matdb": "📊 ฐานข้อมูลวัสดุ 100+ รายการ พร้อม Density และราคา",
+      "excel": "📑 บันทึกผลลัพธ์ลง Excel อัตโนมัติพร้อม Format สวยงาม",
+      "process": "🎨 Coating + Surface + Wire Cut ตั้งราคาเอง เลือกได้",
+      "multiai": "🧠 Multi-AI Engine: Gemini + OpenRouter (5 โมเดล)",
+      "chat": "💬 AI Chat ปรึกษาวัสดุ Spec/Density/Hardening ฯลฯ",
+      "precision": "🔧 Precision Base 1-20 ระดับ ปรับ multiplier ได้",
+      "lang": "🌐 รองรับ TH/EN สลับภาษาได้",
+      "zoom": "🔍 UI Zoom 50-200% ปรับขนาดแสดงผลได้",
+      "support": "📞 Support ตลอดชีพ + อัปเกรดเวอร์ชั่นใหม่ฟรีตลอด"
+    },
+    "diff": {
+      "title": "เปรียบเทียบแพ็กเกจ",
+      "filesPerDay": "จำนวนไฟล์/วัน",
+      "webSaas": "ใช้ผ่าน Web (Browser)",
+      "desktop": "ติดตั้งบน Desktop (รัน Local)",
+      "duration": "อายุการใช้งาน",
+      "license": "License Key สำหรับ Desktop",
+      "forever": "ตลอดไป",
+      "days30": "30 วัน",
+      "days365": "365 วัน",
+      "lifetime": "ตลอดชีพ"
+    }
+  },
+  "Footer": {
+    "company": "บริษัท เจ แนค (ประเทศไทย) จำกัด",
+    "address": "เลขที่ 84 หมู่ 2 ซ.สุนทรวิภาค ถ.บางพลี-ตำหรุ ต.แพรกษาใหม่ อ.เมือง จ.สมุทรปราการ 10280",
+    "phone": "โทร: 08 1144 2000",
+    "email": "อีเมล: info@cnccostify.cloud",
+    "rights": "© 2026 CNC Costify AI. สงวนลิขสิทธิ์",
+    "links": {
+      "product": "ผลิตภัณฑ์",
+      "company": "บริษัท",
+      "legal": "ข้อมูลทางกฎหมาย",
+      "support": "ช่วยเหลือ"
+    }
+  },
+  "Common": {
+    "loading": "กำลังโหลด...",
+    "error": "เกิดข้อผิดพลาด",
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "submit": "ส่ง",
+    "comingSoon": "เร็ว ๆ นี้"
+  },
+  "Auth": {
+    "signupTitle": "สมัครสมาชิกฟรี",
+    "signupSubtitle": "เริ่มใช้งานฟรี — ใช้ฟีเจอร์พื้นฐานได้ตลอด ไม่ต้องใช้บัตรเครดิต",
+    "loginTitle": "เข้าสู่ระบบ",
+    "loginSubtitle": "ยินดีต้อนรับกลับ — กรุณาใส่อีเมลและรหัสผ่าน",
+    "email": "อีเมล",
+    "emailPlaceholder": "you@example.com",
+    "password": "รหัสผ่าน",
+    "passwordPlaceholder": "อย่างน้อย 8 ตัวอักษร",
+    "name": "ชื่อ-นามสกุล",
+    "namePlaceholder": "ชื่อของคุณ",
+    "company": "บริษัท (ถ้ามี)",
+    "companyPlaceholder": "ชื่อบริษัท",
+    "phone": "เบอร์โทรศัพท์ (ถ้ามี)",
+    "phonePlaceholder": "08X-XXX-XXXX",
+    "signupBtn": "สมัครฟรี",
+    "loginBtn": "เข้าสู่ระบบ",
+    "logoutBtn": "ออกจากระบบ",
+    "haveAccount": "มีบัญชีแล้ว?",
+    "noAccount": "ยังไม่มีบัญชี?",
+    "loginLink": "เข้าสู่ระบบ",
+    "signupLink": "สมัครเลย",
+    "forgotPassword": "ลืมรหัสผ่าน?",
+    "agreeTerms": "การสมัครสมาชิกถือว่าคุณยอมรับ",
+    "termsLink": "ข้อกำหนดการใช้งาน",
+    "and": "และ",
+    "privacyLink": "นโยบายความเป็นส่วนตัว",
+    "errors": {
+      "invalid_email": "อีเมลไม่ถูกต้อง",
+      "password_too_short": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
+      "email_already_registered": "อีเมลนี้ถูกใช้งานแล้ว — ลองเข้าสู่ระบบ",
+      "invalid_credentials": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+      "rate_limit": "พยายามมากเกินไป — รอ 15 นาทีแล้วลองใหม่",
+      "network": "เชื่อมต่อ server ไม่ได้",
+      "unknown": "เกิดข้อผิดพลาด — โปรดลองใหม่",
+      "invalid_or_expired_token": "ลิงก์ไม่ถูกต้องหรือหมดอายุแล้ว",
+      "invalid_token": "ลิงก์ไม่ถูกต้อง",
+      "token_expired": "ลิงก์หมดอายุ — กรุณาขอใหม่",
+      "missing_token": "ไม่พบ token",
+      "missing_email": "กรุณาใส่อีเมล"
+    }
+  },
+  "Verify": {
+    "title": "ยืนยันอีเมล",
+    "loading": "กำลังตรวจสอบ...",
+    "success": "✅ ยืนยันอีเมลสำเร็จ!",
+    "successMsg": "อีเมลของคุณยืนยันเรียบร้อยแล้ว — เริ่มใช้งานได้เลย",
+    "goToAccount": "เข้าสู่บัญชี →",
+    "errorTitle": "❌ ไม่สามารถยืนยันได้",
+    "resendBtn": "ส่งลิงก์ใหม่",
+    "resendSuccess": "ส่งลิงก์ใหม่เรียบร้อย — ตรวจสอบ inbox ของคุณ",
+    "missingToken": "ไม่พบ token ในลิงก์"
+  },
+  "Forgot": {
+    "title": "ลืมรหัสผ่าน",
+    "subtitle": "ใส่อีเมลที่คุณสมัคร เราจะส่งลิงก์รีเซ็ตรหัสผ่านให้",
+    "submitBtn": "ส่งลิงก์รีเซ็ต",
+    "successTitle": "✅ ส่งอีเมลแล้ว",
+    "successMsg": "ถ้าอีเมลนี้มีในระบบ คุณจะได้รับลิงก์รีเซ็ตรหัสผ่านภายใน 1-2 นาที",
+    "backToLogin": "← กลับไปเข้าสู่ระบบ"
+  },
+  "Reset": {
+    "title": "ตั้งรหัสผ่านใหม่",
+    "subtitle": "ใส่รหัสผ่านใหม่ที่ต้องการ (อย่างน้อย 8 ตัวอักษร)",
+    "newPassword": "รหัสผ่านใหม่",
+    "confirmPassword": "ยืนยันรหัสผ่านใหม่",
+    "submitBtn": "บันทึกรหัสผ่านใหม่",
+    "successTitle": "✅ ตั้งรหัสผ่านใหม่สำเร็จ",
+    "successMsg": "รหัสผ่านของคุณถูกอัปเดตแล้ว — กรุณาเข้าสู่ระบบด้วยรหัสใหม่",
+    "passwordsMismatch": "รหัสผ่านไม่ตรงกัน",
+    "missingToken": "ลิงก์ไม่ถูกต้อง — กรุณาขอใหม่"
+  },
+  "Account": {
+    "title": "บัญชีของฉัน",
+    "currentPlan": "แพ็กเกจปัจจุบัน",
+    "validUntil": "ใช้ได้ถึง",
+    "lifetime": "ตลอดชีพ",
+    "upgrade": "อัปเกรด",
+    "verified": "อีเมลยืนยันแล้ว",
+    "notVerified": "ยังไม่ได้ยืนยันอีเมล",
+    "memberSince": "สมาชิกตั้งแต่",
+    "lastLogin": "เข้าสู่ระบบล่าสุด"
+  },
+  "Feedback": {
+    "buttonLabel": "💡 แนะนำฟีเจอร์",
+    "title": "💡 แนะนำฟีเจอร์ที่อยากให้พัฒนา",
+    "subtitle": "ระบบของเราพัฒนาตามคำแนะนำของผู้ใช้จริง — บอกได้เลยว่าอยากให้เพิ่มอะไร",
+    "fields": {
+      "category": "หมวดหมู่",
+      "categoryPlaceholder": "เลือกหมวดหมู่",
+      "categories": {
+        "newFeature": "✨ ฟีเจอร์ใหม่",
+        "improvement": "🔧 ปรับปรุงฟีเจอร์เดิม",
+        "bugReport": "🐛 รายงานข้อผิดพลาด",
+        "uiux": "🎨 การออกแบบ/UX",
+        "integration": "🔌 เชื่อมต่อระบบอื่น",
+        "performance": "⚡ ประสิทธิภาพ/ความเร็ว",
+        "other": "💬 อื่นๆ"
+      },
+      "title": "หัวข้อสั้นๆ",
+      "titlePlaceholder": "เช่น เพิ่มการรองรับไฟล์ DXF",
+      "description": "รายละเอียด",
+      "descriptionPlaceholder": "อธิบายฟีเจอร์ที่อยากได้ + ถ้าใช้แล้วจะช่วยคุณอย่างไร...",
+      "importance": "ความสำคัญ",
+      "importanceLevels": {
+        "1": "อยากได้ก็ดี",
+        "2": "ค่อนข้างต้องการ",
+        "3": "ต้องการมาก",
+        "4": "จำเป็น",
+        "5": "สำคัญมาก / Critical"
+      },
+      "name": "ชื่อ (ไม่บังคับ)",
+      "namePlaceholder": "ชื่อ-นามสกุล หรือ ชื่อบริษัท",
+      "email": "อีเมล (สำหรับติดตามผล)",
+      "emailPlaceholder": "you@example.com"
+    },
+    "send": "📤 ส่งคำแนะนำ",
+    "sending": "กำลังส่ง...",
+    "successTitle": "✅ ขอบคุณสำหรับคำแนะนำ!",
+    "successMsg": "เราได้รับข้อความของคุณแล้ว ทีมงานจะพิจารณาและติดต่อกลับหากต้องการรายละเอียดเพิ่มเติม",
+    "errorMsg": "เกิดข้อผิดพลาด — โปรดลองใหม่หรือส่งอีเมลตรงที่ info@cnccostify.cloud",
+    "altMethod": "หรือส่งตรงทาง Email:",
+    "validation": {
+      "categoryRequired": "กรุณาเลือกหมวดหมู่",
+      "titleRequired": "กรุณาใส่หัวข้อ",
+      "descriptionRequired": "กรุณาใส่รายละเอียด",
+      "emailInvalid": "อีเมลไม่ถูกต้อง"
+    }
+  }
+}

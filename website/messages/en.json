@@ -1,0 +1,283 @@
+{
+  "Brand": {
+    "name": "CNC Costify AI",
+    "version": "V5.0",
+    "tagline": "Calculate CNC pricing with AI in 5 seconds"
+  },
+  "Nav": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "docs": "Docs",
+    "download": "Download",
+    "contact": "Contact",
+    "about": "About",
+    "login": "Sign in",
+    "signup": "Sign up free",
+    "tryFree": "Try Free"
+  },
+  "Hero": {
+    "badge": "🎉 V5.0 Launch — 50% off all plans",
+    "headline": "Calculate CNC pricing with AI",
+    "headlineHighlight": "in 5 seconds",
+    "subheadline": "Auto-analyze STEP / PDF / JPG drawings with AI, 100+ material database, and instant Excel export",
+    "ctaPrimary": "Try Free",
+    "ctaSecondary": "View Pricing",
+    "stats": {
+      "files": "Files Analyzed",
+      "materials": "Materials in DB",
+      "speed": "Average Speed",
+      "speedValue": "5s/file"
+    }
+  },
+  "Features": {
+    "title": "Everything you need to price CNC parts in one place",
+    "subtitle": "Built for Thai CNC shops — easy, accurate, and saved automatically",
+    "items": {
+      "step": {
+        "title": "Auto STEP File Analysis",
+        "desc": "Upload .step / .stp — OpenCASCADE computes volume + stock size automatically. No manual measuring required."
+      },
+      "pdfjpg": {
+        "title": "AI Reads PDF/JPG Drawings",
+        "desc": "Upload multiple PDF/JPG/PNG drawings at once. AI extracts Material, Stock Size, Coating, Tolerance, holes, etc."
+      },
+      "calc": {
+        "title": "Auto Cost Calculation",
+        "desc": "Material + CNC + Setup + Coating + Surface + Wire Cut calculated using your shop's formula. Precision Base 1-20 levels."
+      },
+      "excel": {
+        "title": "Save to Excel Instantly",
+        "desc": "Every calculation auto-saves to your Excel file in beautifully formatted sheets, with daily separation and highlighted totals."
+      },
+      "ai": {
+        "title": "Multi-AI Engine",
+        "desc": "Gemini primary + OpenRouter (Qwen, GLM, Claude, Llama) auto-fallback when quota exhausted."
+      },
+      "chat": {
+        "title": "Material AI Chat",
+        "desc": "Ask about Density, Material Spec, Hardening, Coating, Tolerance, Welding and more — answers in 2 seconds."
+      }
+    }
+  },
+  "Pricing": {
+    "title": "Pick the plan that fits you",
+    "subtitle": "Free covers the essentials forever — paid plans unlock advanced AI features (PDF/JPG batch, Multi-AI, AI Chat) and unlimited files",
+    "promoBadge": "🎉 Launch Promo — 50% off all plans",
+    "originalPrice": "Regular Price",
+    "perDay": "files/day",
+    "unlimited": "Unlimited",
+    "perMonth": "/mo",
+    "perYear": "/yr",
+    "lifetime": "Lifetime",
+    "billed": {
+      "monthly": "Billed monthly",
+      "yearly": "Billed yearly",
+      "lifetime": "One-time payment"
+    },
+    "tiers": {
+      "free": {
+        "name": "Free",
+        "tagline": "Try it out",
+        "cta": "Get Started Free"
+      },
+      "monthly": {
+        "name": "Monthly",
+        "tagline": "For continuous use",
+        "badge": "⭐ Popular",
+        "cta": "Subscribe Monthly"
+      },
+      "yearly": {
+        "name": "Yearly",
+        "tagline": "Best value — save ~58%",
+        "badge": "💎 Best Value",
+        "cta": "Buy Yearly"
+      },
+      "lifetime": {
+        "name": "Lifetime",
+        "tagline": "Pay once, use forever",
+        "badge": "👑 Ultimate",
+        "cta": "Buy Lifetime"
+      }
+    },
+    "features": {
+      "title": "All Features",
+      "subtitleAll": "Included in every plan (Free / Monthly / Yearly / Lifetime)",
+      "subtitlePaid": "Paid plans only (Monthly / Yearly / Lifetime)",
+      "step": "📐 Upload STEP — auto volume + stock size analysis",
+      "pdfjpg": "🖼️ Upload PDF/JPG — AI drawing analysis (Multi-file)",
+      "ai": "🤖 AI extracts Material, Stock, Coating, Tolerance, holes",
+      "calc": "💰 Auto cost: Material + CNC + Setup + Coating",
+      "matdb": "📊 100+ materials database with density & pricing",
+      "excel": "📑 Auto-save to Excel with beautiful formatting",
+      "process": "🎨 Custom Coating + Surface + Wire Cut pricing",
+      "multiai": "🧠 Multi-AI: Gemini + OpenRouter (5 models)",
+      "chat": "💬 AI Chat for materials, spec, hardening, etc.",
+      "precision": "🔧 Precision Base 1-20 levels — adjustable multiplier",
+      "lang": "🌐 TH/EN bilingual support",
+      "zoom": "🔍 UI Zoom 50-200% — adjustable display size",
+      "support": "📞 Lifetime support + free version upgrades"
+    },
+    "diff": {
+      "title": "Plan Comparison",
+      "filesPerDay": "Files per day",
+      "webSaas": "Web access (browser)",
+      "desktop": "Desktop install (run local)",
+      "duration": "Validity",
+      "license": "Desktop License Key",
+      "forever": "Forever",
+      "days30": "30 days",
+      "days365": "365 days",
+      "lifetime": "Lifetime"
+    }
+  },
+  "Footer": {
+    "company": "J Nac (Thailand) Co., Ltd.",
+    "address": "84 Moo 2, Soi Soontornvipark, Bangplee-Tamru Rd., Praeksamai, Mueang, Samut Prakan 10280",
+    "phone": "Tel: +66 8 1144 2000",
+    "email": "Email: info@cnccostify.cloud",
+    "rights": "© 2026 CNC Costify AI. All rights reserved.",
+    "links": {
+      "product": "Product",
+      "company": "Company",
+      "legal": "Legal",
+      "support": "Support"
+    }
+  },
+  "Common": {
+    "loading": "Loading...",
+    "error": "Error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "comingSoon": "Coming Soon"
+  },
+  "Auth": {
+    "signupTitle": "Sign Up Free",
+    "signupSubtitle": "Start free — use core features forever, no credit card required",
+    "loginTitle": "Sign In",
+    "loginSubtitle": "Welcome back — enter your email and password",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "At least 8 characters",
+    "name": "Full Name",
+    "namePlaceholder": "Your name",
+    "company": "Company (Optional)",
+    "companyPlaceholder": "Company name",
+    "phone": "Phone (Optional)",
+    "phonePlaceholder": "+66 8X XXX XXXX",
+    "signupBtn": "Sign Up Free",
+    "loginBtn": "Sign In",
+    "logoutBtn": "Sign Out",
+    "haveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "loginLink": "Sign in",
+    "signupLink": "Sign up",
+    "forgotPassword": "Forgot password?",
+    "agreeTerms": "By signing up you agree to our",
+    "termsLink": "Terms",
+    "and": "and",
+    "privacyLink": "Privacy Policy",
+    "errors": {
+      "invalid_email": "Invalid email",
+      "password_too_short": "Password must be at least 8 characters",
+      "email_already_registered": "Email already in use — try signing in",
+      "invalid_credentials": "Wrong email or password",
+      "rate_limit": "Too many attempts — wait 15 minutes",
+      "network": "Cannot reach server",
+      "unknown": "Something went wrong — try again",
+      "invalid_or_expired_token": "Link is invalid or expired",
+      "invalid_token": "Invalid link",
+      "token_expired": "Link expired — request a new one",
+      "missing_token": "Missing token",
+      "missing_email": "Please enter email"
+    }
+  },
+  "Verify": {
+    "title": "Verify Email",
+    "loading": "Verifying...",
+    "success": "✅ Email verified!",
+    "successMsg": "Your email has been verified — you're all set",
+    "goToAccount": "Go to Account →",
+    "errorTitle": "❌ Cannot verify",
+    "resendBtn": "Send new link",
+    "resendSuccess": "New link sent — check your inbox",
+    "missingToken": "Token not found in URL"
+  },
+  "Forgot": {
+    "title": "Forgot Password",
+    "subtitle": "Enter your email and we'll send you a reset link",
+    "submitBtn": "Send Reset Link",
+    "successTitle": "✅ Email sent",
+    "successMsg": "If this email is registered, you'll receive a reset link in 1-2 minutes",
+    "backToLogin": "← Back to sign in"
+  },
+  "Reset": {
+    "title": "Set New Password",
+    "subtitle": "Enter your new password (at least 8 characters)",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "submitBtn": "Save New Password",
+    "successTitle": "✅ Password updated",
+    "successMsg": "Your password has been updated — please sign in with the new password",
+    "passwordsMismatch": "Passwords don't match",
+    "missingToken": "Invalid link — please request a new one"
+  },
+  "Account": {
+    "title": "My Account",
+    "currentPlan": "Current Plan",
+    "validUntil": "Valid until",
+    "lifetime": "Lifetime",
+    "upgrade": "Upgrade",
+    "verified": "Email verified",
+    "notVerified": "Email not verified",
+    "memberSince": "Member since",
+    "lastLogin": "Last login"
+  },
+  "Feedback": {
+    "buttonLabel": "💡 Suggest a Feature",
+    "title": "💡 Suggest a Feature",
+    "subtitle": "Our product evolves with real user feedback — tell us what you'd like to see next",
+    "fields": {
+      "category": "Category",
+      "categoryPlaceholder": "Select a category",
+      "categories": {
+        "newFeature": "✨ New Feature",
+        "improvement": "🔧 Improve Existing Feature",
+        "bugReport": "🐛 Bug Report",
+        "uiux": "🎨 Design / UX",
+        "integration": "🔌 Integration",
+        "performance": "⚡ Performance / Speed",
+        "other": "💬 Other"
+      },
+      "title": "Short Title",
+      "titlePlaceholder": "e.g. Add DXF file support",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe the feature + how it would help your workflow...",
+      "importance": "Importance",
+      "importanceLevels": {
+        "1": "Nice to have",
+        "2": "Somewhat needed",
+        "3": "Strongly needed",
+        "4": "Required",
+        "5": "Critical"
+      },
+      "name": "Name (Optional)",
+      "namePlaceholder": "Your name or company",
+      "email": "Email (for follow-up)",
+      "emailPlaceholder": "you@example.com"
+    },
+    "send": "📤 Send Suggestion",
+    "sending": "Sending...",
+    "successTitle": "✅ Thank you!",
+    "successMsg": "We received your suggestion. Our team will review it and follow up if more details are needed.",
+    "errorMsg": "Something went wrong — please try again or email info@cnccostify.cloud directly",
+    "altMethod": "Or email us directly:",
+    "validation": {
+      "categoryRequired": "Please select a category",
+      "titleRequired": "Please enter a title",
+      "descriptionRequired": "Please enter a description",
+      "emailInvalid": "Invalid email"
+    }
+  }
+}

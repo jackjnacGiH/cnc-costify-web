@@ -1,0 +1,5 @@
+# Force LF line endings for shell scripts (critical on Linux VPS)
+*.sh text eol=lf
+*.cjs text eol=lf
+*.template text eol=lf
+*.conf text eol=lf

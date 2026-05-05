@@ -47,3 +47,20 @@ Thumbs.db
 # We are keeping custom spec files, so commenting this out or being specific
 # *.spec
 users.db 
+
+# Phase 2 additions — runtime artifacts
+backend/data/
+backend/node_modules/
+backend/*.log
+website/node_modules/
+website/.next/
+website/.vercel/
+website/data/
+website/*.log
+website/*.json
+!website/package.json
+!website/package-lock.json
+!website/tsconfig.json
+!website/vercel.json
+.env
+deploy_check.json
