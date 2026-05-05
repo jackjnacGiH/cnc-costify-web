@@ -2122,25 +2122,31 @@ app.get('/api/auth/google/callback', async (req, res) => {
 const desktopLink = require('./lib/desktopLink');
 
 // Middleware: validate device_token (sent by Desktop app via Authorization: Bearer)
+// Desktop SHOULD also send X-Hardware-ID matching the bound HW (1-device-per-token).
 function requireDeviceToken(req, res, next) {
     const auth = req.headers.authorization || '';
     const token = auth.replace(/^Bearer\s+/i, '').trim();
     if (!token) return res.status(401).json({ ok: false, error: 'missing_device_token' });
     const fwd = req.headers['x-forwarded-for'] || '';
     const ip = (typeof fwd === 'string' ? fwd.split(',')[0].trim() : '') || req.socket.remoteAddress || 'unknown';
-    const result = desktopLink.validateDeviceToken(token, ip);
-    if (!result) return res.status(401).json({ ok: false, error: 'invalid_device_token' });
+    const hwId = req.headers['x-hardware-id'] || null;
+    const result = desktopLink.validateDeviceToken(token, ip, hwId);
+    if (!result) return res.status(401).json({ ok: false, error: 'invalid_device_token_or_hw_mismatch' });
     req.deviceUser = result.user;
     req.deviceTokenId = result.deviceTokenId;
+    req.deviceHardwareId = result.hardwareId;
     next();
 }
 
 // 1) Desktop kicks off the auth-link flow → returns a code + URL to open in browser.
 app.post('/api/desktop/auth-link/start', (req, res) => {
     try {
-        const { os, app_version, device_name } = req.body || {};
+        const { os, app_version, device_name, hardware_id } = req.body || {};
+        if (!hardware_id || typeof hardware_id !== 'string' || hardware_id.length < 8) {
+            return res.status(400).json({ ok: false, error: 'missing_hardware_id' });
+        }
         const { code, expiresIn } = desktopLink.startAuthLink({
-            os, appVersion: app_version, deviceName: device_name,
+            os, appVersion: app_version, deviceName: device_name, hardwareId: hardware_id,
         });
         const base = (process.env.APP_BASE_URL || 'https://www.cnccostify.cloud').replace(/\/+$/, '');
         return res.json({
@@ -2153,6 +2159,26 @@ app.post('/api/desktop/auth-link/start', (req, res) => {
         console.error('[desktop/auth-link/start] failed:', err.message);
         return res.status(500).json({ ok: false, error: 'start_failed' });
     }
+});
+
+// 1.5) Web fetches code info (to display Hardware ID + device meta on confirm page)
+app.get('/api/desktop/auth-link/info', (req, res) => {
+    const code = req.query.code;
+    if (!code) return res.status(400).json({ ok: false, error: 'missing_code' });
+    const info = desktopLink.getAuthLinkInfo(String(code));
+    if (!info) return res.status(404).json({ ok: false, error: 'code_not_found' });
+    return res.json({
+        ok: true,
+        info: {
+            hardware_id: info.hardware_id,
+            os: info.os,
+            app_version: info.app_version,
+            device_name: info.device_name,
+            expired: info.expired,
+            authorized: info.authorized,
+            consumed: !!info.consumed,
+        },
+    });
 });
 
 // 2) Web confirms after user clicks "Authorize" — must be logged in (uses session cookie).

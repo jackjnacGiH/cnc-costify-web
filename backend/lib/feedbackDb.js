@@ -162,6 +162,7 @@ function _initSchema(db) {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             token_hash TEXT NOT NULL UNIQUE,
+            hardware_id TEXT,            -- 'sha256:...' — bound at confirmation
             device_name TEXT,            -- e.g. "Windows PC — DESKTOP-AB12"
             os TEXT,                     -- 'win32' / 'darwin' / 'linux'
             app_version TEXT,            -- e.g. '5.1.0'
@@ -169,10 +170,12 @@ function _initSchema(db) {
             last_used_at INTEGER,
             last_ip TEXT,
             revoked INTEGER NOT NULL DEFAULT 0,
+            revoked_reason TEXT,
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
         CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens(user_id);
         CREATE INDEX IF NOT EXISTS idx_device_tokens_hash ON device_tokens(token_hash);
+        CREATE INDEX IF NOT EXISTS idx_device_tokens_hw ON device_tokens(hardware_id);
 
         -- Pending auth-link codes (5-minute TTL).
         -- Flow: desktop opens browser /desktop-auth?code=XYZ → user confirms →
@@ -181,6 +184,7 @@ function _initSchema(db) {
             code TEXT PRIMARY KEY,
             user_id INTEGER,             -- NULL until user authorizes
             device_token TEXT,           -- set by web on confirm; consumed by desktop
+            hardware_id TEXT,            -- supplied by desktop on /start
             os TEXT,
             app_version TEXT,
             device_name TEXT,
@@ -206,6 +210,24 @@ function _initSchema(db) {
         CREATE INDEX IF NOT EXISTS idx_usage_log_user_day ON usage_log(user_id, day_key);
         CREATE INDEX IF NOT EXISTS idx_usage_log_created ON usage_log(created_at DESC);
     `);
+
+    // ─── Lightweight migrations (idempotent) ───────────────────────────
+    // Add columns to existing tables if missing (CREATE TABLE IF NOT EXISTS won't add cols to a pre-existing table).
+    _addColumnIfMissing(db, 'device_tokens', 'hardware_id', 'TEXT');
+    _addColumnIfMissing(db, 'device_tokens', 'revoked_reason', 'TEXT');
+    _addColumnIfMissing(db, 'auth_link_codes', 'hardware_id', 'TEXT');
+    try { db.exec('CREATE INDEX IF NOT EXISTS idx_device_tokens_hw ON device_tokens(hardware_id)'); } catch (_) {}
+}
+
+function _addColumnIfMissing(db, table, column, type) {
+    try {
+        const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+        if (!cols.some((c) => c.name === column)) {
+            db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+        }
+    } catch (e) {
+        console.warn(`[feedbackDb] migration skip ${table}.${column}:`, e.message);
+    }
 }
 
 const VALID_CATEGORIES = new Set([

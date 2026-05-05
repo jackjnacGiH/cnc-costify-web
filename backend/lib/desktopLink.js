@@ -55,16 +55,32 @@ function msUntilThMidnight(nowMs = Date.now()) {
 
 // ─── Auth-link flow ──────────────────────────────────────────────────────
 
-/** Step 1: desktop starts the link flow. */
-function startAuthLink({ os, appVersion, deviceName }) {
+/** Step 1: desktop starts the link flow. Includes hardware_id for binding. */
+function startAuthLink({ os, appVersion, deviceName, hardwareId }) {
     const db = getDb();
     const code = _generateCode();
     const now = Date.now();
     db.prepare(`
-        INSERT INTO auth_link_codes (code, user_id, device_token, os, app_version, device_name, created_at, expires_at, consumed)
-        VALUES (?, NULL, NULL, ?, ?, ?, ?, ?, 0)
-    `).run(code, os || null, appVersion || null, deviceName || null, now, now + AUTH_LINK_TTL_MS);
+        INSERT INTO auth_link_codes (code, user_id, device_token, hardware_id, os, app_version, device_name, created_at, expires_at, consumed)
+        VALUES (?, NULL, NULL, ?, ?, ?, ?, ?, ?, 0)
+    `).run(code, hardwareId || null, os || null, appVersion || null, deviceName || null, now, now + AUTH_LINK_TTL_MS);
     return { code, expiresIn: Math.floor(AUTH_LINK_TTL_MS / 1000) };
+}
+
+/** Read code metadata (for the /desktop-auth confirm page to display HW ID, etc.). */
+function getAuthLinkInfo(code) {
+    if (!code) return null;
+    const db = getDb();
+    const row = db.prepare(`
+        SELECT code, user_id, hardware_id, os, app_version, device_name, created_at, expires_at, consumed
+        FROM auth_link_codes WHERE code = ?
+    `).get(code);
+    if (!row) return null;
+    return {
+        ...row,
+        expired: Date.now() > row.expires_at,
+        authorized: !!row.user_id,
+    };
 }
 
 /** Step 3: web confirms (called by /desktop-auth page after user clicks "Authorize"). */
@@ -80,18 +96,30 @@ function confirmAuthLink({ code, userId, ip }) {
     const token = _generateDeviceToken();
     const tokenHash = _hash(token);
     const now = Date.now();
+    const hwId = row.hardware_id || null;
 
-    // Insert device_tokens row
+    // If THIS user already has an active token bound to THIS hardware_id,
+    // revoke the old one so 1 HW = 1 active token (matches license.dat semantics).
+    let revokedPrior = 0;
+    if (hwId) {
+        revokedPrior = db.prepare(`
+            UPDATE device_tokens
+               SET revoked = 1, revoked_reason = 'rebound'
+             WHERE user_id = ? AND hardware_id = ? AND revoked = 0
+        `).run(userId, hwId).changes;
+    }
+
+    // Insert new device_tokens row (bound to HW ID)
     const dtRes = db.prepare(`
-        INSERT INTO device_tokens (user_id, token_hash, device_name, os, app_version, created_at, last_used_at, last_ip, revoked)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-    `).run(userId, tokenHash, row.device_name, row.os, row.app_version, now, now, ip || null);
+        INSERT INTO device_tokens (user_id, token_hash, hardware_id, device_name, os, app_version, created_at, last_used_at, last_ip, revoked)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+    `).run(userId, tokenHash, hwId, row.device_name, row.os, row.app_version, now, now, ip || null);
 
     // Attach to code row (token kept plaintext briefly until desktop exchanges it)
     db.prepare('UPDATE auth_link_codes SET user_id = ?, device_token = ? WHERE code = ?')
         .run(userId, token, code);
 
-    return { ok: true, deviceTokenId: dtRes.lastInsertRowid };
+    return { ok: true, deviceTokenId: dtRes.lastInsertRowid, revokedPrior };
 }
 
 /** Step 5: desktop polls/exchanges to get the token. One-shot. */
@@ -125,15 +153,25 @@ function cleanupExpiredCodes() {
 
 // ─── Device token validation ─────────────────────────────────────────────
 
-/** Look up a device token; return {user, deviceTokenId} or null. */
-function validateDeviceToken(token, ip) {
+/**
+ * Look up a device token; return {user, deviceTokenId, hardwareId} or null.
+ *
+ * If `expectedHardwareId` is provided, returns null when it doesn't match the
+ * binding stored at confirm time (1-HW-per-token enforcement).
+ */
+function validateDeviceToken(token, ip, expectedHardwareId) {
     if (!token) return null;
     const db = getDb();
     const tokenHash = _hash(token);
     const dt = db.prepare(`
-        SELECT id, user_id, revoked FROM device_tokens WHERE token_hash = ?
+        SELECT id, user_id, hardware_id, revoked FROM device_tokens WHERE token_hash = ?
     `).get(tokenHash);
     if (!dt || dt.revoked) return null;
+    if (expectedHardwareId && dt.hardware_id) {
+        const want = String(expectedHardwareId).trim().toLowerCase();
+        const have = String(dt.hardware_id).trim().toLowerCase();
+        if (want !== have) return null; // hardware mismatch
+    }
     const user = db.prepare(
         'SELECT id, email, name, plan, role, verified, created_at FROM users WHERE id = ?'
     ).get(dt.user_id);
@@ -143,7 +181,7 @@ function validateDeviceToken(token, ip) {
         db.prepare('UPDATE device_tokens SET last_used_at = ?, last_ip = ? WHERE id = ?')
             .run(Date.now(), ip || null, dt.id);
     } catch (_) {}
-    return { user, deviceTokenId: dt.id };
+    return { user, deviceTokenId: dt.id, hardwareId: dt.hardware_id || null };
 }
 
 function revokeDeviceToken(deviceTokenId, userId) {
@@ -155,7 +193,7 @@ function revokeDeviceToken(deviceTokenId, userId) {
 function listUserDevices(userId) {
     const db = getDb();
     return db.prepare(`
-        SELECT id, device_name, os, app_version, created_at, last_used_at, last_ip, revoked
+        SELECT id, device_name, os, app_version, hardware_id, created_at, last_used_at, last_ip, revoked, revoked_reason
         FROM device_tokens WHERE user_id = ? ORDER BY last_used_at DESC, created_at DESC
     `).all(userId);
 }
@@ -225,6 +263,7 @@ function logUsage({ userId, plan, fileType, fileName, fileSize, deviceTokenId })
 module.exports = {
     // Auth-link
     startAuthLink,
+    getAuthLinkInfo,
     confirmAuthLink,
     exchangeAuthLink,
     cleanupExpiredCodes,
