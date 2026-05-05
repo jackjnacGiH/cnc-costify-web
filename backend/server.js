@@ -2005,8 +2005,11 @@ app.get('/api/auth/google', (req, res) => {
     const state = crypto.randomBytes(24).toString('hex');
     const locale = (req.query.locale === 'en' ? 'en' : 'th');
     const remember = req.query.remember === '0' ? '0' : '1';
-    // Encode locale + remember into state cookie payload (simple JSON, base64)
-    const statePayload = Buffer.from(JSON.stringify({ s: state, l: locale, r: remember })).toString('base64url');
+    // Allow only same-origin path (prevent open-redirect)
+    const rawNext = typeof req.query.next === 'string' ? req.query.next : '';
+    const next = (rawNext.startsWith('/') && !rawNext.startsWith('//')) ? rawNext : '';
+    // Encode locale + remember + next into state cookie payload (simple JSON, base64)
+    const statePayload = Buffer.from(JSON.stringify({ s: state, l: locale, r: remember, n: next })).toString('base64url');
 
     const isProd = process.env.NODE_ENV === 'production';
     const cookieFlags = [
@@ -2105,12 +2108,149 @@ app.get('/api/auth/google/callback', async (req, res) => {
         const token = authDb.issueJWT(user, expiresIn);
         _setSessionCookie(res, token, maxAge);
 
-        return res.redirect(`/${locale}/account`);
+        // Redirect to ?next if safe (same-origin path), else /account
+        const nextPath = (typeof parsed.n === 'string' && parsed.n.startsWith('/') && !parsed.n.startsWith('//'))
+            ? parsed.n : `/${locale}/account`;
+        return res.redirect(nextPath);
     } catch (err) {
         console.error('[auth/google/callback] failed:', err);
         return errorRedirect('th', 'oauth_failed');
     }
 });
+
+// ─── Phase B: Desktop ↔ Web link + Quota ─────────────────────────────────
+const desktopLink = require('./lib/desktopLink');
+
+// Middleware: validate device_token (sent by Desktop app via Authorization: Bearer)
+function requireDeviceToken(req, res, next) {
+    const auth = req.headers.authorization || '';
+    const token = auth.replace(/^Bearer\s+/i, '').trim();
+    if (!token) return res.status(401).json({ ok: false, error: 'missing_device_token' });
+    const fwd = req.headers['x-forwarded-for'] || '';
+    const ip = (typeof fwd === 'string' ? fwd.split(',')[0].trim() : '') || req.socket.remoteAddress || 'unknown';
+    const result = desktopLink.validateDeviceToken(token, ip);
+    if (!result) return res.status(401).json({ ok: false, error: 'invalid_device_token' });
+    req.deviceUser = result.user;
+    req.deviceTokenId = result.deviceTokenId;
+    next();
+}
+
+// 1) Desktop kicks off the auth-link flow → returns a code + URL to open in browser.
+app.post('/api/desktop/auth-link/start', (req, res) => {
+    try {
+        const { os, app_version, device_name } = req.body || {};
+        const { code, expiresIn } = desktopLink.startAuthLink({
+            os, appVersion: app_version, deviceName: device_name,
+        });
+        const base = (process.env.APP_BASE_URL || 'https://www.cnccostify.cloud').replace(/\/+$/, '');
+        return res.json({
+            ok: true,
+            code,
+            expires_in: expiresIn,
+            authorize_url: `${base}/th/desktop-auth?code=${encodeURIComponent(code)}`,
+        });
+    } catch (err) {
+        console.error('[desktop/auth-link/start] failed:', err.message);
+        return res.status(500).json({ ok: false, error: 'start_failed' });
+    }
+});
+
+// 2) Web confirms after user clicks "Authorize" — must be logged in (uses session cookie).
+app.post('/api/desktop/auth-link/confirm', requireAuth, (req, res) => {
+    try {
+        const { code } = req.body || {};
+        const fwd = req.headers['x-forwarded-for'] || '';
+        const ip = (typeof fwd === 'string' ? fwd.split(',')[0].trim() : '') || req.socket.remoteAddress || 'unknown';
+        const result = desktopLink.confirmAuthLink({ code, userId: req.user.sub, ip });
+        return res.json(result);
+    } catch (err) {
+        const known = ['invalid_input', 'code_not_found', 'code_expired', 'code_already_used', 'code_already_authorized'];
+        const status = known.includes(err.message) ? 400 : 500;
+        return res.status(status).json({ ok: false, error: err.message || 'confirm_failed' });
+    }
+});
+
+// 3) Desktop polls/exchanges to receive the device_token (one-shot).
+app.get('/api/desktop/auth-link/exchange', (req, res) => {
+    try {
+        const code = req.query.code;
+        const result = desktopLink.exchangeAuthLink(code);
+        if (!result.ok) return res.status(202).json(result); // pending
+        return res.json(result);
+    } catch (err) {
+        const known = ['invalid_input', 'code_not_found', 'code_expired', 'code_already_used'];
+        const status = known.includes(err.message) ? 400 : 500;
+        return res.status(status).json({ ok: false, error: err.message || 'exchange_failed' });
+    }
+});
+
+// Profile for desktop (auth = device token)
+app.get('/api/desktop/me', requireDeviceToken, (req, res) => {
+    const user = req.deviceUser;
+    const status = desktopLink.getQuotaStatus(user.id, user.plan);
+    return res.json({ ok: true, user, quota: status });
+});
+
+// Quota check (no logging — call BEFORE upload)
+app.post('/api/quota/check', requireDeviceToken, (req, res) => {
+    const requested = Math.max(1, Math.min(100, parseInt(req.body?.requested, 10) || 1));
+    const result = desktopLink.checkQuotaForBatch(req.deviceUser.id, req.deviceUser.plan, requested);
+    return res.json({ ok: true, ...result });
+});
+
+// Quota log (call AFTER successful processing — 1 file = 1 unit)
+app.post('/api/quota/log', requireDeviceToken, (req, res) => {
+    try {
+        const { file_type, file_name, file_size, page_count } = req.body || {};
+        // Enforce: PDF/JPG must be 1 page (no multi-page sneaking)
+        if ((String(file_type).toLowerCase() === 'pdf') && page_count && page_count > 1) {
+            return res.status(400).json({ ok: false, error: 'pdf_must_be_single_page' });
+        }
+        // Re-check quota at log time (defense-in-depth — desktop could be tampered)
+        const pre = desktopLink.checkQuotaForBatch(req.deviceUser.id, req.deviceUser.plan, 1);
+        if (!pre.allowed) {
+            return res.status(429).json({ ok: false, error: 'quota_exceeded', ...pre });
+        }
+        const status = desktopLink.logUsage({
+            userId: req.deviceUser.id,
+            plan: req.deviceUser.plan,
+            fileType: file_type,
+            fileName: file_name,
+            fileSize: file_size,
+            deviceTokenId: req.deviceTokenId,
+        });
+        return res.json({ ok: true, quota: status });
+    } catch (err) {
+        const known = ['invalid_file_type'];
+        const status = known.includes(err.message) ? 400 : 500;
+        return res.status(status).json({ ok: false, error: err.message || 'log_failed' });
+    }
+});
+
+// User-side: list devices + revoke
+app.get('/api/account/devices', requireAuth, (req, res) => {
+    const list = desktopLink.listUserDevices(req.user.sub);
+    return res.json({ ok: true, devices: list });
+});
+app.post('/api/account/devices/:id/revoke', requireAuth, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    const changes = desktopLink.revokeDeviceToken(id, req.user.sub);
+    return res.json({ ok: true, revoked: changes > 0 });
+});
+
+// User-side: today's quota status (for /account UI)
+app.get('/api/account/quota', requireAuth, (req, res) => {
+    const user = authDb.findUserById(req.user.sub);
+    if (!user) return res.status(404).json({ ok: false, error: 'user_not_found' });
+    const status = desktopLink.getQuotaStatus(user.id, user.plan);
+    return res.json({ ok: true, quota: status });
+});
+
+// Hourly cleanup of expired auth-link codes (best-effort, in-process timer)
+setInterval(() => {
+    try { desktopLink.cleanupExpiredCodes(); } catch (_) {}
+}, 60 * 60 * 1000).unref();
 
 // Admin-only listing (require simple token from env)
 app.get('/api/feedback/list', (req, res) => {

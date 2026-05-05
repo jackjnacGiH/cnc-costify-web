@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations, useLocale } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { Mail, Lock, User, Building2, Phone, AlertCircle, ArrowRight } from "lucide-react";
@@ -12,6 +12,10 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const t = useTranslations("Auth");
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next");
+  // Only allow same-origin paths to prevent open-redirect
+  const safeNext = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
 
   const [form, setForm] = useState({
     email: "",
@@ -48,8 +52,8 @@ export function AuthForm({ mode }: { mode: Mode }) {
         setBusy(false);
         return;
       }
-      // Success → redirect to /account
-      router.push(`/${locale}/account`);
+      // Success → redirect to ?next= if safe, else /account
+      router.push(safeNext || `/${locale}/account`);
       router.refresh();
     } catch {
       setError(t("errors.network"));
@@ -78,7 +82,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       )}
 
       <a
-        href={`/api/auth/google?locale=${locale}&remember=${remember ? 1 : 0}`}
+        href={`/api/auth/google?locale=${locale}&remember=${remember ? 1 : 0}${safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""}`}
         className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-lg text-sm font-bold text-slate-700 shadow-sm transition-all mb-4"
       >
         <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">

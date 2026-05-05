@@ -154,6 +154,57 @@ function _initSchema(db) {
         );
         CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
         CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token_hash);
+
+        -- Phase B: Desktop App ↔ Web link
+        -- Tokens issued to desktop app after web "Authorize" flow.
+        -- Long-lived (1 year) but revocable; one user can have multiple devices.
+        CREATE TABLE IF NOT EXISTS device_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            token_hash TEXT NOT NULL UNIQUE,
+            device_name TEXT,            -- e.g. "Windows PC — DESKTOP-AB12"
+            os TEXT,                     -- 'win32' / 'darwin' / 'linux'
+            app_version TEXT,            -- e.g. '5.1.0'
+            created_at INTEGER NOT NULL,
+            last_used_at INTEGER,
+            last_ip TEXT,
+            revoked INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens(user_id);
+        CREATE INDEX IF NOT EXISTS idx_device_tokens_hash ON device_tokens(token_hash);
+
+        -- Pending auth-link codes (5-minute TTL).
+        -- Flow: desktop opens browser /desktop-auth?code=XYZ → user confirms →
+        -- web sets user_id on this row → desktop polls /api/desktop/auth-link/exchange.
+        CREATE TABLE IF NOT EXISTS auth_link_codes (
+            code TEXT PRIMARY KEY,
+            user_id INTEGER,             -- NULL until user authorizes
+            device_token TEXT,           -- set by web on confirm; consumed by desktop
+            os TEXT,
+            app_version TEXT,
+            device_name TEXT,
+            created_at INTEGER NOT NULL,
+            expires_at INTEGER NOT NULL,
+            consumed INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX IF NOT EXISTS idx_auth_link_codes_expires ON auth_link_codes(expires_at);
+
+        -- Daily usage log (1 row per file).
+        -- Quota = COUNT(*) WHERE user_id=? AND day_key='YYYY-MM-DD' (TH timezone).
+        CREATE TABLE IF NOT EXISTS usage_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            day_key TEXT NOT NULL,       -- 'YYYY-MM-DD' in Asia/Bangkok
+            file_type TEXT NOT NULL,     -- 'step' | 'pdf' | 'jpg'
+            file_name TEXT,
+            file_size INTEGER,           -- bytes
+            device_token_id INTEGER,     -- which device logged this
+            created_at INTEGER NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_usage_log_user_day ON usage_log(user_id, day_key);
+        CREATE INDEX IF NOT EXISTS idx_usage_log_created ON usage_log(created_at DESC);
     `);
 }
 
