@@ -175,7 +175,8 @@ function _initSchema(db) {
         );
         CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens(user_id);
         CREATE INDEX IF NOT EXISTS idx_device_tokens_hash ON device_tokens(token_hash);
-        CREATE INDEX IF NOT EXISTS idx_device_tokens_hw ON device_tokens(hardware_id);
+        -- idx_device_tokens_hw is created in the migration section below
+        -- (avoids "no such column" if device_tokens existed before hardware_id was added)
 
         -- Pending auth-link codes (5-minute TTL).
         -- Flow: desktop opens browser /desktop-auth?code=XYZ → user confirms →
