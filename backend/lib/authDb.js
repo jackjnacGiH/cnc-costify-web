@@ -35,6 +35,39 @@ function _safeUser(row) {
     return safe;
 }
 
+/**
+ * Find existing user by email or create a new one for OAuth providers (Google).
+ * Auto-verifies email since the OAuth provider already confirmed ownership.
+ * Returns the full user row.
+ */
+async function findOrCreateGoogleUser({ email, name = null, picture = null }) {
+    if (!email) throw new Error('missing_email');
+    const normalizedEmail = email.toLowerCase().trim();
+    const db = getDb();
+    let user = db.prepare('SELECT * FROM users WHERE email = ?').get(normalizedEmail);
+    if (user) {
+        // Existing — auto-verify (since Google confirmed) + backfill name if missing
+        const updates = [];
+        const args = [];
+        if (!user.verified) { updates.push('verified = 1'); }
+        if (!user.name && name) { updates.push('name = ?'); args.push(name); }
+        if (updates.length > 0) {
+            args.push(user.id);
+            db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...args);
+            user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+        }
+        return user;
+    }
+    // New user via Google — random password (user can use forgot-password later to set their own)
+    const randomPassword = crypto.randomBytes(48).toString('hex');
+    const password_hash = await bcrypt.hash(randomPassword, BCRYPT_ROUNDS);
+    const result = db.prepare(`
+        INSERT INTO users (email, password_hash, name, plan, verified, role, created_at)
+        VALUES (?, ?, ?, 'free', 1, 'user', ?)
+    `).run(normalizedEmail, password_hash, name, Date.now());
+    return db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+}
+
 async function createUser({ email, password, name = null, company = null, phone = null }) {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         throw new Error('invalid_email');
@@ -147,6 +180,7 @@ async function consumeResetToken(token, newPassword) {
 
 module.exports = {
     createUser,
+    findOrCreateGoogleUser,
     authenticate,
     findUserById,
     findUserByEmail,

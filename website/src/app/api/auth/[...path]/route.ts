@@ -2,6 +2,7 @@
  * Auth proxy: forwards /api/auth/* to backend (Hostinger VPS server.js).
  *
  * Forwards Set-Cookie from backend to browser so JWT session cookie persists.
+ * Forwards Location header for OAuth redirect flows (Google).
  *
  * Env: BACKEND_API_URL — default http://localhost:5000
  */
@@ -21,7 +22,11 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
 
     const body = req.method !== "GET" && req.method !== "HEAD" ? await req.text() : undefined;
 
-    const upstream = await fetch(`${BACKEND_URL}/api/auth/${path.join("/")}`, {
+    // Preserve query string for OAuth callbacks (?code=...&state=...)
+    const search = req.nextUrl.search || "";
+    const upstreamUrl = `${BACKEND_URL}/api/auth/${path.join("/")}${search}`;
+
+    const upstream = await fetch(upstreamUrl, {
       method: req.method,
       headers: {
         "Content-Type": req.headers.get("content-type") || "application/json",
@@ -33,16 +38,34 @@ async function proxy(req: NextRequest, ctx: { params: Promise<{ path: string[] }
       redirect: "manual",
     });
 
+    // OAuth redirect flow: forward 3xx with Location + Set-Cookie
+    const status = upstream.status;
+    if (status >= 300 && status < 400) {
+      const location = upstream.headers.get("location") || "/";
+      const res = NextResponse.redirect(new URL(location, req.nextUrl.origin), status as 301 | 302 | 303 | 307 | 308);
+      const setCookies = upstream.headers.getSetCookie?.() || [];
+      for (const c of setCookies) res.headers.append("set-cookie", c);
+      // Fallback for runtimes without getSetCookie
+      if (setCookies.length === 0) {
+        const sc = upstream.headers.get("set-cookie");
+        if (sc) res.headers.set("set-cookie", sc);
+      }
+      return res;
+    }
+
     const data = await upstream.text();
     const res = new NextResponse(data, {
-      status: upstream.status,
+      status,
       headers: {
         "Content-Type": upstream.headers.get("content-type") || "application/json",
       },
     });
-    // Forward Set-Cookie from backend to browser
-    const setCookie = upstream.headers.get("set-cookie");
-    if (setCookie) res.headers.set("set-cookie", setCookie);
+    const setCookies = upstream.headers.getSetCookie?.() || [];
+    for (const c of setCookies) res.headers.append("set-cookie", c);
+    if (setCookies.length === 0) {
+      const sc = upstream.headers.get("set-cookie");
+      if (sc) res.headers.set("set-cookie", sc);
+    }
     return res;
   } catch (err) {
     console.error("[auth proxy] failed:", err);

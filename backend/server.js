@@ -1778,18 +1778,24 @@ const authDb = require('./lib/authDb');
 const emailLib = require('./lib/email');
 
 const COOKIE_NAME = 'cnc_session';
-const COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days in seconds
-function _setSessionCookie(res, token) {
+const COOKIE_REMEMBER_AGE = 30 * 24 * 60 * 60;  // 30 days
+const COOKIE_SHORT_AGE    = 24 * 60 * 60;       // 1 day
+function _setSessionCookie(res, token, maxAgeSec = COOKIE_REMEMBER_AGE) {
     const isProd = process.env.NODE_ENV === 'production';
     const flags = [
         `${COOKIE_NAME}=${token}`,
         'Path=/',
         'HttpOnly',
-        `Max-Age=${COOKIE_MAX_AGE}`,
+        `Max-Age=${maxAgeSec}`,
         'SameSite=Lax',
     ];
     if (isProd) flags.push('Secure');
-    res.setHeader('Set-Cookie', flags.join('; '));
+    // Append (don't overwrite) so we can also send oauth_state/clear cookies in same response
+    const existing = res.getHeader('Set-Cookie');
+    const next = flags.join('; ');
+    if (Array.isArray(existing)) res.setHeader('Set-Cookie', [...existing, next]);
+    else if (existing) res.setHeader('Set-Cookie', [existing, next]);
+    else res.setHeader('Set-Cookie', next);
 }
 function _clearSessionCookie(res) {
     res.setHeader('Set-Cookie', `${COOKIE_NAME}=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax`);
@@ -1953,14 +1959,16 @@ app.post('/api/auth/login', async (req, res) => {
         if (!_checkAuthRateLimit(ip)) {
             return res.status(429).json({ ok: false, error: 'rate_limit' });
         }
-        const { email, password } = req.body || {};
+        const { email, password, remember } = req.body || {};
         const user = await authDb.authenticate({ email, password });
         if (!user) {
             return res.status(401).json({ ok: false, error: 'invalid_credentials' });
         }
         authDb.updateLastLogin(user.id, ip);
-        const token = authDb.issueJWT(user);
-        _setSessionCookie(res, token);
+        const expiresIn = remember ? '30d' : '1d';
+        const maxAge = remember ? COOKIE_REMEMBER_AGE : COOKIE_SHORT_AGE;
+        const token = authDb.issueJWT(user, expiresIn);
+        _setSessionCookie(res, token, maxAge);
         return res.json({ ok: true, user: authDb._safeUser(user) });
     } catch (err) {
         console.error('[auth/login] failed:', err.message);
@@ -1977,6 +1985,131 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
     const user = authDb.findUserById(req.user.sub);
     if (!user) return res.status(404).json({ ok: false, error: 'user_not_found' });
     return res.json({ ok: true, user: authDb._safeUser(user) });
+});
+
+// ─── Google OAuth (Phase 2.2 ext) ────────────────────────────────────────
+const OAUTH_STATE_COOKIE = 'cnc_oauth_state';
+function _appBaseUrl() {
+    return (process.env.APP_BASE_URL || 'https://www.cnccostify.cloud').replace(/\/+$/, '');
+}
+function _googleRedirectUri() {
+    return `${_appBaseUrl()}/api/auth/google/callback`;
+}
+
+app.get('/api/auth/google', (req, res) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+        return res.status(503).json({ ok: false, error: 'google_oauth_not_configured' });
+    }
+    const crypto = require('crypto');
+    const state = crypto.randomBytes(24).toString('hex');
+    const locale = (req.query.locale === 'en' ? 'en' : 'th');
+    const remember = req.query.remember === '0' ? '0' : '1';
+    // Encode locale + remember into state cookie payload (simple JSON, base64)
+    const statePayload = Buffer.from(JSON.stringify({ s: state, l: locale, r: remember })).toString('base64url');
+
+    const isProd = process.env.NODE_ENV === 'production';
+    const cookieFlags = [
+        `${OAUTH_STATE_COOKIE}=${statePayload}`,
+        'Path=/',
+        'HttpOnly',
+        'Max-Age=600', // 10 minutes
+        'SameSite=Lax',
+    ];
+    if (isProd) cookieFlags.push('Secure');
+    res.setHeader('Set-Cookie', cookieFlags.join('; '));
+
+    const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: _googleRedirectUri(),
+        response_type: 'code',
+        scope: 'openid email profile',
+        state: state,
+        access_type: 'online',
+        prompt: 'select_account',
+    });
+    return res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
+});
+
+app.get('/api/auth/google/callback', async (req, res) => {
+    const errorRedirect = (locale, code) =>
+        res.redirect(`/${locale || 'th'}/login?error=${encodeURIComponent(code)}`);
+    try {
+        const clientId = process.env.GOOGLE_CLIENT_ID;
+        const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+        if (!clientId || !clientSecret) return errorRedirect('th', 'google_not_configured');
+
+        const { code, state } = req.query || {};
+        const stateCookie = _readCookie(req, OAUTH_STATE_COOKIE);
+        // Clear state cookie regardless of outcome
+        const clearState = `${OAUTH_STATE_COOKIE}=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+        res.setHeader('Set-Cookie', clearState);
+
+        if (!code || !state || !stateCookie) return errorRedirect('th', 'oauth_state_missing');
+        let parsed;
+        try {
+            parsed = JSON.parse(Buffer.from(stateCookie, 'base64url').toString('utf8'));
+        } catch (_) {
+            return errorRedirect('th', 'oauth_state_invalid');
+        }
+        if (parsed.s !== state) return errorRedirect(parsed.l || 'th', 'oauth_state_mismatch');
+        const locale = parsed.l === 'en' ? 'en' : 'th';
+
+        // Exchange code → tokens
+        const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                code: String(code),
+                client_id: clientId,
+                client_secret: clientSecret,
+                redirect_uri: _googleRedirectUri(),
+                grant_type: 'authorization_code',
+            }).toString(),
+        });
+        if (!tokenResp.ok) {
+            const txt = await tokenResp.text().catch(() => '');
+            console.error('[auth/google] token exchange failed:', tokenResp.status, txt);
+            return errorRedirect(locale, 'oauth_token_failed');
+        }
+        const tokenJson = await tokenResp.json();
+        const accessToken = tokenJson.access_token;
+        if (!accessToken) return errorRedirect(locale, 'oauth_no_access_token');
+
+        // Fetch user profile
+        const profResp = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!profResp.ok) {
+            console.error('[auth/google] userinfo failed:', profResp.status);
+            return errorRedirect(locale, 'oauth_profile_failed');
+        }
+        const profile = await profResp.json();
+        if (!profile.email) return errorRedirect(locale, 'oauth_no_email');
+        if (profile.verified_email === false) return errorRedirect(locale, 'oauth_email_unverified');
+
+        // Find or create
+        const user = await authDb.findOrCreateGoogleUser({
+            email: profile.email,
+            name: profile.name || null,
+            picture: profile.picture || null,
+        });
+        const fwd = req.headers['x-forwarded-for'] || '';
+        const ip = (typeof fwd === 'string' ? fwd.split(',')[0].trim() : '') || req.socket.remoteAddress || 'unknown';
+        authDb.updateLastLogin(user.id, ip);
+
+        // Issue JWT — Google login defaults to "remember" (30d)
+        const remember = parsed.r !== '0';
+        const expiresIn = remember ? '30d' : '1d';
+        const maxAge = remember ? COOKIE_REMEMBER_AGE : COOKIE_SHORT_AGE;
+        const token = authDb.issueJWT(user, expiresIn);
+        _setSessionCookie(res, token, maxAge);
+
+        return res.redirect(`/${locale}/account`);
+    } catch (err) {
+        console.error('[auth/google/callback] failed:', err);
+        return errorRedirect('th', 'oauth_failed');
+    }
 });
 
 // Admin-only listing (require simple token from env)
