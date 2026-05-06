@@ -58,6 +58,15 @@ export function AccountUsageCard({ locale }: { locale: string }) {
         </span>
       </div>
 
+      {/* Note for license.dat users — counters here only reflect web-quota usage */}
+      {!isUnlimited && (
+        <div className="mb-3 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-2">
+          {locale === "th"
+            ? "💡 ตัวเลขนี้นับเฉพาะการใช้งานผ่านบัญชี Free เท่านั้น — ถ้าเครื่องของคุณมี license.dat ที่ใช้งานได้ Desktop App จะใช้สิทธิ์นั้นแบบไม่จำกัด (ไม่ถูกนับที่นี่)"
+            : "💡 This counter only tracks web-account Free usage — if your machine has a valid license.dat, the Desktop App uses it for unlimited access (not counted here)."}
+        </div>
+      )}
+
       {isUnlimited ? (
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-100">
