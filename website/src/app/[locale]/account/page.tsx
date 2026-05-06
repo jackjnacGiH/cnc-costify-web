@@ -8,6 +8,7 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { ResendVerifyButton } from "@/components/ResendVerifyButton";
 import { AccountUsageCard } from "@/components/AccountUsageCard";
 import { AccountDevicesCard } from "@/components/AccountDevicesCard";
+import { LaunchDesktopButton } from "@/components/LaunchDesktopButton";
 import { Calendar, ArrowUp, Mail, User, Building2, Phone } from "lucide-react";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -88,6 +89,23 @@ export default async function AccountPage({ params }: Props) {
               </div>
             </div>
           )}
+
+          {/* Launch Desktop button */}
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl p-5 mb-6">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h3 className="font-black text-slate-900 mb-1">
+                  {locale === "th" ? "🚀 เริ่มใช้งานเลย" : "🚀 Get Started"}
+                </h3>
+                <p className="text-sm text-slate-600">
+                  {locale === "th"
+                    ? "เปิด CNC Costify AI Desktop ที่ติดตั้งบนเครื่องของคุณ"
+                    : "Launch CNC Costify AI Desktop installed on your machine"}
+                </p>
+              </div>
+              <LaunchDesktopButton locale={locale} />
+            </div>
+          </div>
 
           {/* Plan card */}
           <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 mb-6">
