@@ -47,7 +47,7 @@ export default async function DownloadPage({ params }: Props) {
                 </ul>
               </div>
               <a
-                href="/downloads/CNC-Costify-AI-V5.1-Setup.exe"
+                href="https://api.cnccostify.cloud/downloads/CNC-Costify-AI-V5.1-Setup.exe"
                 download
                 className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all"
               >

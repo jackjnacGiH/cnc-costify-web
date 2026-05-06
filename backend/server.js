@@ -521,6 +521,20 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'CNC_Costify_AI_V6.html'));
 });
 
+// Public installer downloads (large files served directly by Express).
+// Files placed in /opt/cnc-costify/backend/downloads/ are publicly fetchable
+// at https://api.cnccostify.cloud/downloads/<file>. Browser triggers Save-As
+// for unknown content-types which is what we want for .exe installers.
+app.use('/downloads', express.static(path.join(__dirname, 'downloads'), {
+    fallthrough: false,
+    setHeaders: (res, filePath) => {
+        // Force download instead of inline open
+        const name = path.basename(filePath);
+        res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+    },
+}));
+
 // Favicon route (use generated multi-resolution ICO)
 app.get('/favicon.ico', (req, res) => {
     res.sendFile(path.join(__dirname, 'assets', 'icons', 'app.ico'));
