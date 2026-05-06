@@ -2238,6 +2238,25 @@ app.post('/api/quota/check', requireDeviceToken, (req, res) => {
     return res.json({ ok: true, ...result });
 });
 
+// Desktop reports its local license.dat status (so /account can show "Unlimited via license").
+// Called periodically by Desktop after validateLicense(). Bypassed for license.dat=null payloads.
+app.post('/api/desktop/report-license', requireDeviceToken, (req, res) => {
+    try {
+        const { status, expires_at, days_left } = req.body || {};
+        const result = desktopLink.reportLocalLicense({
+            deviceTokenId: req.deviceTokenId,
+            status: status || null,
+            expiresAt: expires_at || null,
+            daysLeft: typeof days_left === 'number' ? days_left : null,
+        });
+        return res.json(result);
+    } catch (err) {
+        const known = ['missing_device_token_id', 'invalid_status'];
+        const code = known.includes(err.message) ? 400 : 500;
+        return res.status(code).json({ ok: false, error: err.message || 'report_failed' });
+    }
+});
+
 // Quota log (call AFTER successful processing — 1 file = 1 unit)
 app.post('/api/quota/log', requireDeviceToken, (req, res) => {
     try {
@@ -2279,12 +2298,27 @@ app.post('/api/account/devices/:id/revoke', requireAuth, (req, res) => {
     return res.json({ ok: true, revoked: changes > 0 });
 });
 
-// User-side: today's quota status (for /account UI)
+// User-side: today's quota status (for /account UI).
+// If any of the user's devices has reported a valid license.dat, return that
+// instead of the Free counter (so the page reflects the actual access level).
 app.get('/api/account/quota', requireAuth, (req, res) => {
     const user = authDb.findUserById(req.user.sub);
     if (!user) return res.status(404).json({ ok: false, error: 'user_not_found' });
     const status = desktopLink.getQuotaStatus(user.id, user.plan);
-    return res.json({ ok: true, quota: status });
+    const bestLocal = desktopLink.getBestLocalLicense(user.id);
+    return res.json({
+        ok: true,
+        quota: status,
+        local_license: bestLocal ? {
+            status: bestLocal.local_license_status,
+            expires_at: bestLocal.local_license_expires_at,
+            days_left: bestLocal.local_license_days_left,
+            reported_at: bestLocal.local_license_reported_at,
+            device_id: bestLocal.id,
+            device_name: bestLocal.device_name,
+            hardware_id: bestLocal.hardware_id,
+        } : null,
+    });
 });
 
 // Hourly cleanup of expired auth-link codes (best-effort, in-process timer)

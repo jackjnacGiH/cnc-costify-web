@@ -193,9 +193,54 @@ function revokeDeviceToken(deviceTokenId, userId) {
 function listUserDevices(userId) {
     const db = getDb();
     return db.prepare(`
-        SELECT id, device_name, os, app_version, hardware_id, created_at, last_used_at, last_ip, revoked, revoked_reason
+        SELECT id, device_name, os, app_version, hardware_id,
+               local_license_status, local_license_expires_at, local_license_days_left, local_license_reported_at,
+               created_at, last_used_at, last_ip, revoked, revoked_reason
         FROM device_tokens WHERE user_id = ? ORDER BY last_used_at DESC, created_at DESC
     `).all(userId);
+}
+
+/**
+ * Update license.dat status for a device. Called by Desktop app after every
+ * successful local validateLicense(). Lets /account display "License: Yearly
+ * until 2027-XX-XX (365 days)" instead of the misleading Free counter.
+ */
+function reportLocalLicense({ deviceTokenId, status, expiresAt, daysLeft }) {
+    if (!deviceTokenId) throw new Error('missing_device_token_id');
+    const db = getDb();
+    const ok = ['active', 'grace', null].includes(status);
+    if (!ok) throw new Error('invalid_status');
+    db.prepare(`
+        UPDATE device_tokens
+           SET local_license_status = ?,
+               local_license_expires_at = ?,
+               local_license_days_left = ?,
+               local_license_reported_at = ?
+         WHERE id = ?
+    `).run(
+        status || null,
+        expiresAt || null,
+        Number.isFinite(daysLeft) ? Math.max(0, Math.floor(daysLeft)) : null,
+        Date.now(),
+        deviceTokenId,
+    );
+    return { ok: true };
+}
+
+/**
+ * Get the "best" license.dat status across a user's devices. Used by /account
+ * to override Free counter with "Unlimited via license.dat (XXX days left)".
+ * Returns the device with the highest days_left, or null if no device reported.
+ */
+function getBestLocalLicense(userId) {
+    const db = getDb();
+    return db.prepare(`
+        SELECT id, hardware_id, device_name, local_license_status, local_license_expires_at, local_license_days_left, local_license_reported_at
+        FROM device_tokens
+        WHERE user_id = ? AND revoked = 0 AND local_license_status IN ('active','grace')
+        ORDER BY local_license_days_left DESC NULLS LAST, local_license_reported_at DESC
+        LIMIT 1
+    `).get(userId);
 }
 
 // ─── Quota ───────────────────────────────────────────────────────────────
@@ -271,6 +316,8 @@ module.exports = {
     validateDeviceToken,
     revokeDeviceToken,
     listUserDevices,
+    reportLocalLicense,
+    getBestLocalLicense,
     // Quota
     getQuotaStatus,
     checkQuotaForBatch,

@@ -217,6 +217,11 @@ function _initSchema(db) {
     _addColumnIfMissing(db, 'device_tokens', 'hardware_id', 'TEXT');
     _addColumnIfMissing(db, 'device_tokens', 'revoked_reason', 'TEXT');
     _addColumnIfMissing(db, 'auth_link_codes', 'hardware_id', 'TEXT');
+    // Phase B.5.fix: store license.dat status reported by Desktop app
+    _addColumnIfMissing(db, 'device_tokens', 'local_license_status', 'TEXT');     // 'active' | 'grace' | null
+    _addColumnIfMissing(db, 'device_tokens', 'local_license_expires_at', 'TEXT'); // ISO date string
+    _addColumnIfMissing(db, 'device_tokens', 'local_license_days_left', 'INTEGER');
+    _addColumnIfMissing(db, 'device_tokens', 'local_license_reported_at', 'INTEGER');
     try { db.exec('CREATE INDEX IF NOT EXISTS idx_device_tokens_hw ON device_tokens(hardware_id)'); } catch (_) {}
 }
 
