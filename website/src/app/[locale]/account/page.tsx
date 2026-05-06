@@ -9,6 +9,7 @@ import { ResendVerifyButton } from "@/components/ResendVerifyButton";
 import { AccountUsageCard } from "@/components/AccountUsageCard";
 import { AccountDevicesCard } from "@/components/AccountDevicesCard";
 import { LaunchDesktopButton } from "@/components/LaunchDesktopButton";
+import { AccountPlanCard } from "@/components/AccountPlanCard";
 import { Calendar, ArrowUp, Mail, User, Building2, Phone } from "lucide-react";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -107,38 +108,12 @@ export default async function AccountPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Plan card */}
-          <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 mb-6">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-                  {locale === "th" ? "แพ็กเกจปัจจุบัน" : "Current Plan"}
-                </div>
-                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-black text-lg ${planStyle.bg} ${planStyle.text}`}>
-                  <span>{planStyle.icon}</span>
-                  <span className="uppercase">{user.plan}</span>
-                </div>
-                <div className="mt-3 text-sm text-slate-600 flex items-center gap-2">
-                  <Calendar size={14} />
-                  {locale === "th" ? "ใช้ได้ถึง:" : "Valid until:"}{" "}
-                  <strong>
-                    {isLifetime
-                      ? (locale === "th" ? "ตลอดชีพ ♾️" : "Lifetime ♾️")
-                      : (user.plan_expires_at ? formatDate(user.plan_expires_at, locale) : (locale === "th" ? "ใช้งานฟรีตลอด" : "Free forever"))}
-                  </strong>
-                </div>
-              </div>
-              {user.plan !== "lifetime" && (
-                <Link
-                  href={`/${locale}/upgrade`}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all"
-                >
-                  <ArrowUp size={16} />
-                  {locale === "th" ? "อัปเกรด" : "Upgrade"}
-                </Link>
-              )}
-            </div>
-          </div>
+          {/* Plan card — overrides FREE display when license.dat is reported by Desktop */}
+          <AccountPlanCard
+            locale={locale}
+            plan={user.plan}
+            planExpiresAt={user.plan_expires_at || null}
+          />
 
           {/* Today's usage */}
           <AccountUsageCard locale={locale} />
