@@ -12,28 +12,44 @@ type AuthUser = {
   plan?: string;
 } | null;
 
+type LocalLicense = {
+  status: "active" | "grace" | null;
+  days_left: number | null;
+} | null;
+
 export function Navbar() {
   const t = useTranslations("Nav");
   const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<AuthUser>(null);
+  const [localLicense, setLocalLicense] = useState<LocalLicense>(null);
   const [authLoaded, setAuthLoaded] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
-  // Fetch /api/auth/me on mount + when window regains focus
+  // Fetch /api/auth/me + /api/account/quota (for license.dat override)
+  // on mount + when window regains focus.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        const r = await fetch("/api/auth/me", { credentials: "include", cache: "no-store" });
+        const [meRes, quotaRes] = await Promise.all([
+          fetch("/api/auth/me", { credentials: "include", cache: "no-store" }),
+          fetch("/api/account/quota", { credentials: "include", cache: "no-store" }).catch(() => null),
+        ]);
         if (cancelled) return;
-        if (r.ok) {
-          const data = await r.json().catch(() => null);
+        if (meRes.ok) {
+          const data = await meRes.json().catch(() => null);
           setUser(data?.ok ? data.user : null);
         } else {
           setUser(null);
         }
-      } catch { setUser(null); }
+        if (quotaRes && quotaRes.ok) {
+          const qd = await quotaRes.json().catch(() => null);
+          setLocalLicense(qd?.ok ? (qd.local_license || null) : null);
+        } else {
+          setLocalLicense(null);
+        }
+      } catch { setUser(null); setLocalLicense(null); }
       finally { if (!cancelled) setAuthLoaded(true); }
     };
     load();
@@ -41,6 +57,16 @@ export function Navbar() {
     window.addEventListener("focus", onFocus);
     return () => { cancelled = true; window.removeEventListener("focus", onFocus); };
   }, []);
+
+  // Effective plan = license.dat override (if any) → user.plan → 'free'
+  const effectivePlan = (() => {
+    if (localLicense && (localLicense.status === "active" || localLicense.status === "grace")) {
+      const days = localLicense.days_left ?? 0;
+      return days > 5 * 365 ? "lifetime" : "yearly";
+    }
+    return user?.plan || "free";
+  })();
+  const planFromLicenseDat = effectivePlan !== (user?.plan || "free");
 
   const handleSignOut = async () => {
     try {
@@ -141,16 +167,21 @@ export function Navbar() {
                         {locale === "th" ? "เข้าสู่ระบบเป็น" : "Signed in as"}
                       </div>
                       <div className="text-sm font-bold text-slate-900 truncate">{user.email}</div>
-                      {user.plan && (
-                        <span className={`mt-1 inline-block text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                          user.plan === "free" ? "bg-slate-100 text-slate-700"
-                          : user.plan === "monthly" ? "bg-blue-100 text-blue-700"
-                          : user.plan === "yearly" ? "bg-purple-100 text-purple-700"
+                      <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                        <span className={`inline-block text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                          effectivePlan === "free" ? "bg-slate-100 text-slate-700"
+                          : effectivePlan === "monthly" ? "bg-blue-100 text-blue-700"
+                          : effectivePlan === "yearly" ? "bg-purple-100 text-purple-700"
                           : "bg-amber-100 text-amber-800"
                         }`}>
-                          {user.plan}
+                          {effectivePlan}
                         </span>
-                      )}
+                        {planFromLicenseDat && (
+                          <span className="text-[10px] text-slate-500 font-medium">
+                            (license.dat)
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <Link
                       href={`/${locale}/account`}
