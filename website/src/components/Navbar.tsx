@@ -80,7 +80,7 @@ export function Navbar() {
   };
 
   const links = [
-    { href: `/${locale}/features`, label: t("features") },
+    { href: `/${locale}`, label: t("home") },
     { href: `/${locale}/pricing`, label: t("pricing") },
     { href: `/${locale}/docs`, label: t("docs") },
     { href: `/${locale}/download`, label: t("download") },

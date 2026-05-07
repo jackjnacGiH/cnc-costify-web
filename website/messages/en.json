@@ -5,6 +5,7 @@
     "tagline": "Calculate CNC pricing with AI in 5 seconds"
   },
   "Nav": {
+    "home": "Home",
     "features": "Features",
     "pricing": "Pricing",
     "docs": "Docs",
