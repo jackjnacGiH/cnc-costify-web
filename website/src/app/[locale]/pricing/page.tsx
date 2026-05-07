@@ -44,7 +44,7 @@ const TIERS = [
     originalPrice: 890,
     promoPrice: 445,
     suffix: { th: "/เดือน", en: "/mo" },
-    filesPerDay: { th: "ไม่จำกัด", en: "Unlimited" },
+    filesPerDay: { th: "30 ไฟล์/วัน", en: "30 files/day" },
     desktop: true,
     offline: false,
     duration: "days30",

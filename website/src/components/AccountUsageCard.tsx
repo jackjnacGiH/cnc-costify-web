@@ -129,12 +129,12 @@ export function AccountUsageCard({ locale }: { locale: string }) {
         </span>
       </div>
 
-      {/* Note for license.dat users — counters here only reflect web-quota usage */}
+      {/* Note: counter doesn't count usage from machines with license.dat */}
       {!isUnlimited && (
         <div className="mb-3 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-2">
           {locale === "th"
-            ? "💡 ตัวเลขนี้นับเฉพาะการใช้งานผ่านบัญชี Free เท่านั้น — ถ้าเครื่องของคุณมี license.dat ที่ใช้งานได้ Desktop App จะใช้สิทธิ์นั้นแบบไม่จำกัด (ไม่ถูกนับที่นี่)"
-            : "💡 This counter only tracks web-account Free usage — if your machine has a valid license.dat, the Desktop App uses it for unlimited access (not counted here)."}
+            ? "💡 ตัวเลขนี้นับเฉพาะแพ็กเกจที่ตรวจสิทธิ์ออนไลน์ (Free / Monthly) — ถ้าเครื่องของคุณมี license.dat ที่ใช้งานได้ (Yearly / Lifetime) Desktop App จะใช้สิทธิ์นั้นแบบไม่จำกัด (ไม่ถูกนับที่นี่)"
+            : "💡 This counter tracks online-verified plans only (Free / Monthly) — if your machine has a valid license.dat (Yearly / Lifetime), the Desktop App uses it for unlimited access (not counted here)."}
         </div>
       )}
 

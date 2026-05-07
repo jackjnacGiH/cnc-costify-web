@@ -18,6 +18,18 @@ const crypto = require('crypto');
 const { getDb } = require('./feedbackDb');
 
 const FREE_DAILY_LIMIT = 3;
+// Per-plan daily file limits. null = unlimited. Anything not in this map
+// falls through to FREE_DAILY_LIMIT (defensive default).
+const PLAN_LIMITS = {
+    free: 3,
+    monthly: 30,
+    yearly: null,
+    lifetime: null,
+};
+function getPlanLimit(plan) {
+    const k = String(plan || 'free').toLowerCase();
+    return Object.prototype.hasOwnProperty.call(PLAN_LIMITS, k) ? PLAN_LIMITS[k] : FREE_DAILY_LIMIT;
+}
 const AUTH_LINK_TTL_MS = 5 * 60 * 1000;   // 5 minutes
 const DEVICE_TOKEN_BYTES = 32;             // 256-bit
 const TH_OFFSET_MS = 7 * 60 * 60 * 1000;   // UTC+7
@@ -245,15 +257,12 @@ function getBestLocalLicense(userId) {
 
 // ─── Quota ───────────────────────────────────────────────────────────────
 
-const PAID_PLANS = new Set(['monthly', 'yearly', 'lifetime']);
-
-function _isPaid(plan) {
-    return PAID_PLANS.has(String(plan || '').toLowerCase());
-}
-
 /**
  * Returns { plan, limit (or null=unlimited), used, remaining, resetInMs, allowed }.
  * Pure read — does not log anything.
+ *
+ * Per-plan limits come from PLAN_LIMITS:
+ *   free=3, monthly=30, yearly=∞, lifetime=∞
  */
 function getQuotaStatus(userId, plan) {
     const db = getDb();
@@ -261,13 +270,14 @@ function getQuotaStatus(userId, plan) {
     const used = db.prepare(
         'SELECT COUNT(*) AS c FROM usage_log WHERE user_id = ? AND day_key = ?'
     ).get(userId, dayKey).c;
-    if (_isPaid(plan)) {
+    const limit = getPlanLimit(plan);
+    if (limit === null) {
         return { plan, limit: null, used, remaining: -1, resetInMs: msUntilThMidnight(), allowed: true };
     }
-    const remaining = Math.max(0, FREE_DAILY_LIMIT - used);
+    const remaining = Math.max(0, limit - used);
     return {
         plan,
-        limit: FREE_DAILY_LIMIT,
+        limit,
         used,
         remaining,
         resetInMs: msUntilThMidnight(),
@@ -325,4 +335,6 @@ module.exports = {
     getThDayKey,
     msUntilThMidnight,
     FREE_DAILY_LIMIT,
+    PLAN_LIMITS,
+    getPlanLimit,
 };
