@@ -89,7 +89,7 @@
       },
       "yearly": {
         "name": "Yearly",
-        "tagline": "Best value — save ~58%",
+        "tagline": "🎁 Pay 1 year, get 3 months free — 15 months total",
         "badge": "💎 Best Value",
         "cta": "Buy Yearly"
       },
@@ -127,7 +127,7 @@
       "license": "License Key (.dat) for offline use",
       "forever": "Forever",
       "days30": "30 days",
-      "days365": "365 days",
+      "days365": "12 mo + 3 mo free (15 months)",
       "lifetime": "Lifetime"
     }
   },

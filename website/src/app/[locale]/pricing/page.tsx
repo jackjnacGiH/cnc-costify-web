@@ -180,6 +180,12 @@ function PricingContent({ locale }: { locale: string }) {
                         🎉 {locale === "th" ? "ลด 50% ราคาเปิดตัว" : "50% OFF Launch Promo"}
                       </div>
                     )}
+                    {/* Yearly bonus banner */}
+                    {tier.key === "yearly" && (
+                      <div className="mt-2 px-2 py-1.5 rounded-md bg-gradient-to-r from-emerald-100 to-teal-100 border border-emerald-300 text-xs font-bold text-emerald-800">
+                        🎁 {locale === "th" ? "ฟรี! เพิ่มอีก 3 เดือน รวมใช้ได้ 15 เดือน" : "BONUS! +3 months free — 15 months total"}
+                      </div>
+                    )}
                   </div>
 
                   {/* Quick info */}
