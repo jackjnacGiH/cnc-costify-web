@@ -93,9 +93,38 @@
   "Preview": {
     "title": "See the actual interface",
     "subtitle": "Designed to be dead simple — drag a file, pick the material, hit Calculate.",
-    "caption1": "🔵 Drop in a STEP file — system computes volume + stock size automatically.",
-    "caption2": "🟣 Batch-upload PDF/JPG drawings — AI analyzes every one of them.",
-    "caption3": "🟢 Save to Excel + see usage status on the web."
+    "spot1": {
+      "badge": "STEP VOLUME",
+      "title": "Auto volume + stock size from STEP files",
+      "desc": "Drop a STEP/STP file — OpenCASCADE engine computes the real volume and stock-bar size in 5 seconds.",
+      "b1": "✓ Engineering-grade volume accuracy",
+      "b2": "✓ Auto stock size (rectangular / cylindrical)",
+      "b3": "✓ Material + CNC + Setup + Coating on one screen"
+    },
+    "spot2": {
+      "badge": "PDF/JPG AI BATCH",
+      "title": "Analyze multiple drawings at once",
+      "desc": "Batch-upload PDF/JPG drawings — AI extracts material, stock, coating, tolerance, holes for every file. Customer-ready summary table in seconds.",
+      "b1": "✓ Multi-AI: Gemini + OpenRouter (5 models) auto-fallback",
+      "b2": "✓ Reads stock size / notes / coating specs",
+      "b3": "✓ Instant Excel export — table ready for your customer"
+    },
+    "spot3": {
+      "badge": "FULL CUSTOMIZATION",
+      "title": "Tune pricing, materials, and coatings",
+      "desc": "100+ materials database (editable), CNC formulas per difficulty, Coating/Surface/Wire-Cut rates dialed to your shop.",
+      "b1": "✓ 4 difficulty multipliers (easy → very hard)",
+      "b2": "✓ Material DB 100+ — add/edit density and pricing",
+      "b3": "✓ Backup / Restore settings between machines"
+    },
+    "spot4": {
+      "badge": "AI MATERIAL CHAT",
+      "title": "Ask AI about materials any time, 24/7",
+      "desc": "Need to know corrosion resistance, density, or substitutes? Ask AI instantly with engineering-grade recommendations.",
+      "b1": "✓ Heat / chemical / corrosion resistance",
+      "b2": "✓ Substitutes + spec comparison + pricing",
+      "b3": "✓ Hardening / coating / surface treatment"
+    }
   },
   "Features": {
     "title": "Everything you need to price CNC parts in one place",

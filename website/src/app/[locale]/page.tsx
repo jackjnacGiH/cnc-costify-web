@@ -148,38 +148,56 @@ function HomePageContent({ locale }: { locale: string }) {
         </div>
       </section>
 
-      {/* ─── App Preview (mock screenshot frames — drop real PNGs into /public/screenshots/) ─── */}
-      <section className="py-20 bg-slate-900 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-purple-600/10" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-black text-white mb-3">
+      {/* ─── App Spotlight — 4 alternating left/right rows ─── */}
+      <section className="py-20 bg-gradient-to-b from-white to-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 mb-3">
               {tPrev("title")}
             </h2>
-            <p className="text-lg text-slate-300 max-w-2xl mx-auto">{tPrev("subtitle")}</p>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">{tPrev("subtitle")}</p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
-            <ScreenshotFrame
-              src="/screenshots/main-step.png"
-              caption={tPrev("caption1")}
-              fallbackTitle={locale === "th" ? "หน้าหลัก — STEP Volume" : "Main — STEP Volume"}
-              fallbackBody="ผลลัพธ์การคำนวณ • Material Cost ฿4,660 • CNC Process ฿7,600 • ราคาชิ้นงาน ฿12,610"
+          <div className="space-y-20 md:space-y-28">
+            <SpotlightRow
+              imgSrc="/screenshots/main-step.png"
+              imgAlt="CNC Costify AI — Main / STEP volume calculator"
+              imgSide="left"
               accent="blue"
+              badge={tPrev("spot1.badge")}
+              title={tPrev("spot1.title")}
+              desc={tPrev("spot1.desc")}
+              bullets={[tPrev("spot1.b1"), tPrev("spot1.b2"), tPrev("spot1.b3")]}
             />
-            <ScreenshotFrame
-              src="/screenshots/pdf-batch.png"
-              caption={tPrev("caption2")}
-              fallbackTitle={locale === "th" ? "PDF/JPG Batch" : "PDF/JPG Batch"}
-              fallbackBody="JIG BASE · MC NYLON · 35×93×126 · 230฿  /  Field Coil · SS400 · 12×148×230 · 370฿"
+            <SpotlightRow
+              imgSrc="/screenshots/pdf-batch.png"
+              imgAlt="CNC Costify AI — PDF/JPG batch AI analysis"
+              imgSide="right"
               accent="purple"
+              badge={tPrev("spot2.badge")}
+              title={tPrev("spot2.title")}
+              desc={tPrev("spot2.desc")}
+              bullets={[tPrev("spot2.b1"), tPrev("spot2.b2"), tPrev("spot2.b3")]}
             />
-            <ScreenshotFrame
-              src="/screenshots/license-tab.png"
-              caption={tPrev("caption3")}
-              fallbackTitle={locale === "th" ? "สิทธิ์การใช้งาน" : "License Status"}
-              fallbackBody="🌐 บัญชีเว็บไซต์ · 🟢 Online · YEARLY (license.dat) · เหลือ 365 วัน"
+            <SpotlightRow
+              imgSrc="/screenshots/settings.png"
+              imgAlt="CNC Costify AI — Settings / pricing customization"
+              imgSide="left"
+              accent="amber"
+              badge={tPrev("spot3.badge")}
+              title={tPrev("spot3.title")}
+              desc={tPrev("spot3.desc")}
+              bullets={[tPrev("spot3.b1"), tPrev("spot3.b2"), tPrev("spot3.b3")]}
+            />
+            <SpotlightRow
+              imgSrc="/screenshots/ai-chat.png"
+              imgAlt="CNC Costify AI — AI material consultation chat"
+              imgSide="right"
               accent="emerald"
+              badge={tPrev("spot4.badge")}
+              title={tPrev("spot4.title")}
+              desc={tPrev("spot4.desc")}
+              bullets={[tPrev("spot4.b1"), tPrev("spot4.b2"), tPrev("spot4.b3")]}
             />
           </div>
         </div>
@@ -336,71 +354,108 @@ function HomePageContent({ locale }: { locale: string }) {
 }
 
 /**
- * Browser-frame screenshot with graceful fallback.
+ * Spotlight row — large screenshot on one side, marketing copy on the other.
+ * Mobile: stacks vertically (image always on top of text on small screens).
  *
- * If a real PNG exists at /public/screenshots/<file>.png it shows. Otherwise
- * the styled mockup body shows so the section still looks polished.
- *
- * Drop real screenshots in `website/public/screenshots/` to upgrade.
+ * The screenshot is wrapped in a stylish browser-mockup frame with a soft
+ * glow/blur in the accent color. If the real PNG hasn't been added yet, a
+ * polished gradient fallback is shown so the layout never looks broken.
  */
-function ScreenshotFrame({
-  src, caption, fallbackTitle, fallbackBody, accent,
+function SpotlightRow({
+  imgSrc, imgAlt, imgSide, accent, badge, title, desc, bullets,
 }: {
-  src: string;
-  caption: string;
-  fallbackTitle: string;
-  fallbackBody: string;
-  accent: "blue" | "purple" | "emerald";
+  imgSrc: string;
+  imgAlt: string;
+  imgSide: "left" | "right";
+  accent: "blue" | "purple" | "amber" | "emerald";
+  badge: string;
+  title: string;
+  desc: string;
+  bullets: string[];
 }) {
   const accentMap = {
-    blue:    { bar: "bg-blue-500",    glow: "shadow-blue-500/20" },
-    purple:  { bar: "bg-purple-500",  glow: "shadow-purple-500/20" },
-    emerald: { bar: "bg-emerald-500", glow: "shadow-emerald-500/20" },
+    blue:    { glow: "from-blue-400/30 to-cyan-300/20",    badge: "bg-blue-100 text-blue-700 border-blue-300",    border: "ring-blue-500/30",    bullet: "text-blue-600" },
+    purple:  { glow: "from-purple-400/30 to-pink-300/20",  badge: "bg-purple-100 text-purple-700 border-purple-300", border: "ring-purple-500/30", bullet: "text-purple-600" },
+    amber:   { glow: "from-amber-400/30 to-orange-300/20", badge: "bg-amber-100 text-amber-800 border-amber-300", border: "ring-amber-500/30",   bullet: "text-amber-600" },
+    emerald: { glow: "from-emerald-400/30 to-teal-300/20", badge: "bg-emerald-100 text-emerald-700 border-emerald-300", border: "ring-emerald-500/30", bullet: "text-emerald-600" },
   };
   const a = accentMap[accent];
+
+  const ImageBlock = (
+    <div className="relative">
+      {/* Soft glow behind the screenshot */}
+      <div className={`absolute -inset-6 bg-gradient-to-br ${a.glow} rounded-3xl blur-3xl -z-10`} />
+      {/* Browser mock + screenshot */}
+      <div className={`relative bg-slate-800 rounded-2xl overflow-hidden shadow-2xl ring-1 ${a.border} hover:scale-[1.02] hover:-translate-y-1 transition-all duration-500`}>
+        {/* Mock title bar */}
+        <div className="bg-slate-700/80 px-3 py-2 flex items-center gap-2 border-b border-slate-600/50">
+          <div className="flex gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-rose-400" />
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+          </div>
+          <div className="flex-1 text-center text-[10px] text-slate-400 font-mono tracking-tight truncate">
+            CNC Costify AI V5.1
+          </div>
+        </div>
+        {/* Image (with fallback gradient if not present) */}
+        <div className="relative aspect-[16/10] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imgSrc}
+            alt={imgAlt}
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover object-top"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          />
+          <div className="absolute inset-0 p-8 flex flex-col items-center justify-center text-center pointer-events-none">
+            <div className={`text-xs font-bold tracking-widest uppercase mb-2 px-2 py-0.5 rounded ${a.badge} border opacity-80`}>
+              {badge}
+            </div>
+            <div className="text-slate-400 text-sm">
+              Screenshot will load when /public/screenshots/* is populated
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const TextBlock = (
+    <div>
+      <div className={`inline-flex items-center px-3 py-1 rounded-full border text-xs font-extrabold tracking-widest mb-4 ${a.badge}`}>
+        {badge}
+      </div>
+      <h3 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 mb-4 leading-tight">
+        {title}
+      </h3>
+      <p className="text-base md:text-lg text-slate-600 leading-relaxed mb-6">
+        {desc}
+      </p>
+      <ul className="space-y-2.5">
+        {bullets.map((b, i) => (
+          <li key={i} className={`flex items-start gap-2 text-sm md:text-base text-slate-700`}>
+            <span className={`font-black text-lg ${a.bullet} leading-none`}>{b.startsWith("✓") ? "" : "✓"}</span>
+            <span>{b.replace(/^✓\s*/, "")}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
   return (
-    <div className={`bg-slate-800 rounded-2xl overflow-hidden shadow-2xl ${a.glow} border border-slate-700 group hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300`}>
-      {/* Mock browser bar */}
-      <div className="bg-slate-700/80 px-3 py-2 flex items-center gap-2 border-b border-slate-600/50">
-        <div className="flex gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-rose-400" />
-          <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-        </div>
-        <div className="flex-1 text-center text-[10px] text-slate-400 font-mono tracking-tight truncate">
-          CNC Costify AI V5.1
-        </div>
-      </div>
-      {/* Screenshot area: real img if exists, otherwise styled mock */}
-      <div className="relative aspect-[16/10] bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={fallbackTitle}
-          className="absolute inset-0 w-full h-full object-cover object-top"
-          onError={(e) => {
-            // Hide broken image — fallback markup below shows through
-            (e.currentTarget as HTMLImageElement).style.display = "none";
-          }}
-        />
-        {/* Fallback mock — visible if image fails to load */}
-        <div className="absolute inset-0 p-6 flex flex-col">
-          <div className={`h-1 w-16 rounded-full ${a.bar} mb-4`} />
-          <div className="text-white font-black text-lg mb-3">{fallbackTitle}</div>
-          <div className="space-y-2 flex-1">
-            <div className="h-3 bg-slate-700 rounded w-5/6" />
-            <div className="h-3 bg-slate-700 rounded w-4/6" />
-            <div className="h-3 bg-slate-700 rounded w-3/4" />
-          </div>
-          <div className="text-[11px] text-slate-400 leading-relaxed line-clamp-3 mt-3">
-            {fallbackBody}
-          </div>
-        </div>
-      </div>
-      {/* Caption */}
-      <div className="px-4 py-3 bg-slate-900/50 text-sm text-slate-200 leading-relaxed border-t border-slate-700/50">
-        {caption}
-      </div>
+    <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+      {imgSide === "left" ? (
+        <>
+          <div className="order-2 md:order-1">{ImageBlock}</div>
+          <div className="order-1 md:order-2">{TextBlock}</div>
+        </>
+      ) : (
+        <>
+          <div className="order-2 md:order-1">{TextBlock}</div>
+          <div className="order-1 md:order-2">{ImageBlock}</div>
+        </>
+      )}
     </div>
   );
 }

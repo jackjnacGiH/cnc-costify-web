@@ -93,9 +93,38 @@
   "Preview": {
     "title": "ดูตัวอย่างหน้าจอจริง",
     "subtitle": "อินเตอร์เฟซที่ออกแบบให้ใช้ง่าย — ลากไฟล์, เลือกวัสดุ, กดคำนวณ",
-    "caption1": "🔵 อัปโหลด STEP file → ระบบคำนวณ Volume + Stock Size อัตโนมัติ",
-    "caption2": "🟣 อัปโหลด PDF/JPG หลายไฟล์พร้อมกัน → AI วิเคราะห์ทุกแบบงาน",
-    "caption3": "🟢 บันทึกลง Excel + แสดงสถานะการใช้งานบนเว็บ"
+    "spot1": {
+      "badge": "STEP VOLUME",
+      "title": "คำนวณ Volume + Stock Size อัตโนมัติ",
+      "desc": "ลากไฟล์ STEP/STP ลงไป — ระบบใช้ OpenCASCADE engine คำนวณปริมาตรจริงและขนาด Stock ที่ต้องสั่งซื้อ ภายใน 5 วินาที",
+      "b1": "✓ Volume แม่นยำระดับ engineering grade",
+      "b2": "✓ Auto Stock Size (สี่เหลี่ยม / ทรงกระบอก)",
+      "b3": "✓ Material Cost + CNC + Setup + Coating ในจอเดียว"
+    },
+    "spot2": {
+      "badge": "PDF/JPG AI BATCH",
+      "title": "AI วิเคราะห์แบบงานทีละหลายๆ ไฟล์",
+      "desc": "อัปโหลด PDF/JPG หลายไฟล์พร้อมกัน — AI ดึง Material, Stock, Coating, Tolerance, รูเจาะ ออกมาให้ทุกไฟล์ พร้อมตารางสรุปราคาส่งลูกค้าได้ทันที",
+      "b1": "✓ Multi-AI: Gemini + OpenRouter (5 โมเดล) auto-fallback",
+      "b2": "✓ ตรวจ stock size / drawing notes / coating สเปก",
+      "b3": "✓ Export Excel ทันที — ตารางพร้อมส่งลูกค้า"
+    },
+    "spot3": {
+      "badge": "ปรับแต่งทุกอย่าง",
+      "title": "ตั้งค่าราคา / วัสดุ / Coating ได้เอง",
+      "desc": "ฐานข้อมูลวัสดุ 100+ รายการพร้อมแก้ไข, สูตร CNC ตามความยากของงาน, ราคา Coating/Surface/Wire Cut ปรับให้ตรงโรงงานคุณ",
+      "b1": "✓ Process Pricing 4 ระดับ (ง่าย/ปานกลาง/ค่อนข้างยาก/ยากมาก)",
+      "b2": "✓ Material Database 100+ — เพิ่ม/แก้ Density + ราคาเองได้",
+      "b3": "✓ Backup / Restore Settings ส่งระหว่างเครื่องได้"
+    },
+    "spot4": {
+      "badge": "AI MATERIAL CHAT",
+      "title": "ปรึกษา AI เรื่องวัสดุได้ตลอด 24/7",
+      "desc": "ไม่รู้ว่าวัสดุอะไรเหมาะ? ทนการกัดกร่อนได้ไหม? Density เท่าไหร่? — ถาม AI ได้ทันที พร้อมคำแนะนำทางวิศวกรรมระดับมืออาชีพ",
+      "b1": "✓ ทนความร้อน / สารเคมี / การกัดกร่อน",
+      "b2": "✓ วัสดุทดแทน + เทียบสเปก + ราคา",
+      "b3": "✓ Hardening / Coating / Surface treatment"
+    }
   },
   "Features": {
     "title": "ทุกอย่างที่คุณต้องการ คำนวณราคา CNC ครบในที่เดียว",
