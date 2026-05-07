@@ -132,12 +132,22 @@ function PricingContent({ locale }: { locale: string }) {
               const Icon = tier.icon;
               const isPopular = "popular" in tier && tier.popular;
               const isBestValue = "bestValue" in tier && tier.bestValue;
+              // Per-tier hover glow color (matches the tier's accent)
+              const hoverGlow: Record<string, string> = {
+                slate:  "hover:shadow-slate-400/30 hover:border-slate-400",
+                blue:   "hover:shadow-blue-500/40  hover:border-blue-500",
+                purple: "hover:shadow-purple-500/40 hover:border-purple-500",
+                amber:  "hover:shadow-amber-500/40 hover:border-amber-500",
+              };
               return (
                 <div
                   key={tier.key}
-                  className={`relative bg-gradient-to-br ${tier.gradient} border-2 ${tier.border} rounded-2xl p-6 ${
+                  className={`group relative bg-gradient-to-br ${tier.gradient} border-2 ${tier.border} rounded-2xl p-6 ${
                     isPopular || isBestValue ? "shadow-2xl scale-105 z-10" : "shadow-md"
-                  } transition-all hover:shadow-xl`}
+                  } transition-all duration-300 ease-out
+                     hover:-translate-y-2 hover:shadow-2xl ${hoverGlow[tier.color] || ""}
+                     ${isPopular || isBestValue ? "hover:scale-[1.08]" : "hover:scale-[1.03]"}
+                     cursor-pointer`}
                 >
                   {isPopular && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full shadow-md">
@@ -151,8 +161,8 @@ function PricingContent({ locale }: { locale: string }) {
                   )}
 
                   <div className="flex items-center gap-2 mb-4">
-                    <Icon size={28} className={`text-${tier.color}-600`} />
-                    <h3 className="text-2xl font-black text-slate-900">
+                    <Icon size={28} className={`text-${tier.color}-600 transition-transform duration-300 group-hover:scale-125 group-hover:rotate-6`} />
+                    <h3 className="text-2xl font-black text-slate-900 transition-colors group-hover:text-slate-950">
                       {t(`tiers.${tier.key}.name`)}
                     </h3>
                   </div>
@@ -327,7 +337,13 @@ function PricingContent({ locale }: { locale: string }) {
                   <td className="px-4 py-3 text-sm font-medium text-slate-700">{t("diff.duration")}</td>
                   {TIERS.map((tier) => (
                     <td key={tier.key} className="px-4 py-3 text-sm text-center font-bold text-slate-900">
-                      {t(`diff.${tier.duration}`)}
+                      {tier.duration === "days365" ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 border-2 border-emerald-400 text-emerald-800 text-xs font-extrabold shadow-sm whitespace-nowrap animate-pulse">
+                          🎁 {t(`diff.${tier.duration}`)}
+                        </span>
+                      ) : (
+                        t(`diff.${tier.duration}`)
+                      )}
                     </td>
                   ))}
                 </tr>
