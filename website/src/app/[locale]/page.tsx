@@ -398,24 +398,29 @@ function SpotlightRow({
             CNC Costify AI V5.1
           </div>
         </div>
-        {/* Image (with fallback gradient if not present) */}
-        <div className="relative aspect-[16/10] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imgSrc}
-            alt={imgAlt}
-            loading="lazy"
-            className="absolute inset-0 w-full h-full object-cover object-top"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-          />
-          <div className="absolute inset-0 p-8 flex flex-col items-center justify-center text-center pointer-events-none">
+        {/*
+         * Background-image with placeholder underneath. If the PNG is missing
+         * the image silently fails to load (no broken-image icon since we
+         * use background-image, not <img>) and the placeholder shows through.
+         * No client-side onError handler needed — server component safe.
+         */}
+        <div className="relative aspect-[16/10] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+          {/* Placeholder layer */}
+          <div className="absolute inset-0 p-8 flex flex-col items-center justify-center text-center">
             <div className={`text-xs font-bold tracking-widest uppercase mb-2 px-2 py-0.5 rounded ${a.badge} border opacity-80`}>
               {badge}
             </div>
             <div className="text-slate-400 text-sm">
-              Screenshot will load when /public/screenshots/* is populated
+              CNC Costify AI V5.1
             </div>
           </div>
+          {/* Image layer (covers placeholder when present) */}
+          <div
+            className="absolute inset-0 bg-cover bg-top bg-no-repeat"
+            style={{ backgroundImage: `url(${imgSrc})` }}
+            role="img"
+            aria-label={imgAlt}
+          />
         </div>
       </div>
     </div>
