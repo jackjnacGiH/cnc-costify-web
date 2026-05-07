@@ -30,6 +30,73 @@
       "speedValue": "5s/file"
     }
   },
+  "Pain": {
+    "title": "Sound familiar?",
+    "subtitle": "Common headaches every CNC shop deals with when quoting",
+    "items": {
+      "slow": {
+        "title": "Quoting takes hours",
+        "desc": "1 quote means measuring volume, finding material, calculating CNC time, adding coating — 1-2 hr per part"
+      },
+      "nostandard": {
+        "title": "Inconsistent pricing",
+        "desc": "Each estimator does it differently — some forget setup, some miss coating → margin leaks"
+      },
+      "supplier": {
+        "title": "Calling suppliers for material prices",
+        "desc": "Open the spreadsheet, call vendors, wait for callbacks — hours wasted just on raw-material rates"
+      },
+      "latenight": {
+        "title": "Working late to meet quote deadlines",
+        "desc": "Customer sends drawings Friday afternoon, wants pricing Monday → your team works nights & weekends"
+      },
+      "office": {
+        "title": "Stuck waiting for office hours",
+        "desc": "Customer emails a drawing at 11 PM — you can't respond because you have no material database or AI tools"
+      },
+      "lostdeal": {
+        "title": "Lost deals from slow replies",
+        "desc": "Customer gets a quote from a competitor 2-3 days before yours → you've already lost the opportunity"
+      }
+    }
+  },
+  "Benefit": {
+    "title": "What you get with CNC Costify AI",
+    "subtitle": "Hours → Seconds. Manual → 90% AI-assisted.",
+    "items": {
+      "fast": {
+        "title": "Done in 5 seconds per file",
+        "desc": "From 1-2 hr → 5 seconds = 100× more quotes per day. Reply instantly, close deals fast."
+      },
+      "standard": {
+        "title": "One pricing standard across the team",
+        "desc": "Same formulas, material rates, coating rates for everyone. No more leaks from inconsistent calculations."
+      },
+      "noCall": {
+        "title": "No more calling suppliers",
+        "desc": "100+ materials with density & pricing built in — pick, click, get the number."
+      },
+      "always": {
+        "title": "Works 24/7 — no business-hour bottleneck",
+        "desc": "Customer sends a drawing at 2 AM? Drag, drop, AI replies. Send back the quote within 5 minutes."
+      },
+      "moreTime": {
+        "title": "Free up time for real work",
+        "desc": "Estimating that used to be 8 hr/day drops to 1-2 hr. Spend the rest on customers and process improvement."
+      },
+      "winMore": {
+        "title": "Win more deals",
+        "desc": "Faster than competitors = higher win rate. Customers will even pay a small premium for the instant response."
+      }
+    }
+  },
+  "Preview": {
+    "title": "See the actual interface",
+    "subtitle": "Designed to be dead simple — drag a file, pick the material, hit Calculate.",
+    "caption1": "🔵 Drop in a STEP file — system computes volume + stock size automatically.",
+    "caption2": "🟣 Batch-upload PDF/JPG drawings — AI analyzes every one of them.",
+    "caption3": "🟢 Save to Excel + see usage status on the web."
+  },
   "Features": {
     "title": "Everything you need to price CNC parts in one place",
     "subtitle": "Built for Thai CNC shops — easy, accurate, and saved automatically",
