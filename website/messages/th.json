@@ -120,10 +120,10 @@
     "diff": {
       "title": "เปรียบเทียบแพ็กเกจ",
       "filesPerDay": "จำนวนไฟล์/วัน",
-      "webSaas": "ใช้ผ่าน Web (Browser)",
       "desktop": "ติดตั้งบน Desktop (รัน Local)",
+      "offline": "ใช้งานออฟไลน์ได้ (ไม่ต้องเชื่อมต่ออินเทอร์เน็ต)",
       "duration": "อายุการใช้งาน",
-      "license": "License Key สำหรับ Desktop",
+      "license": "License Key (.dat) สำหรับใช้งานออฟไลน์",
       "forever": "ตลอดไป",
       "days30": "30 วัน",
       "days365": "365 วัน",

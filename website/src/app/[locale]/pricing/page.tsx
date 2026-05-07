@@ -13,6 +13,9 @@ export default async function PricingPage({ params }: Props) {
   return <PricingContent locale={locale} />;
 }
 
+// All packages install on Desktop. Free/Monthly require an internet connection
+// (server enforces quota / verifies subscription); Yearly/Lifetime ship a
+// license.dat for full offline use.
 const TIERS = [
   {
     key: "free",
@@ -25,8 +28,8 @@ const TIERS = [
     promoPrice: 0,
     suffix: { th: "ตลอดไป", en: "Forever" },
     filesPerDay: { th: "3 ไฟล์/วัน", en: "3 files/day" },
-    web: true,
-    desktop: false,
+    desktop: true,
+    offline: false,
     duration: "forever",
     license: false,
     href: "/signup",
@@ -42,8 +45,8 @@ const TIERS = [
     promoPrice: 445,
     suffix: { th: "/เดือน", en: "/mo" },
     filesPerDay: { th: "ไม่จำกัด", en: "Unlimited" },
-    web: true,
-    desktop: false,
+    desktop: true,
+    offline: false,
     duration: "days30",
     license: false,
     href: "/upgrade?plan=monthly",
@@ -60,8 +63,8 @@ const TIERS = [
     promoPrice: 4450,
     suffix: { th: "/ปี", en: "/yr" },
     filesPerDay: { th: "ไม่จำกัด", en: "Unlimited" },
-    web: true,
     desktop: true,
+    offline: true,
     duration: "days365",
     license: true,
     href: "/upgrade?plan=yearly",
@@ -78,8 +81,8 @@ const TIERS = [
     promoPrice: 44500,
     suffix: { th: "ครั้งเดียว", en: "Once" },
     filesPerDay: { th: "ไม่จำกัด", en: "Unlimited" },
-    web: true,
     desktop: true,
+    offline: true,
     duration: "lifetime",
     license: true,
     href: "/upgrade?plan=lifetime",
@@ -186,12 +189,12 @@ function PricingContent({ locale }: { locale: string }) {
                       <span><strong>{tier.filesPerDay[locale as "th" | "en"]}</strong></span>
                     </div>
                     <div className="flex items-start gap-2">
-                      {tier.web ? <Check size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" /> : <X size={16} className="text-slate-400 flex-shrink-0 mt-0.5" />}
-                      <span>{t("diff.webSaas")}</span>
+                      <Check size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+                      <span>{t("diff.desktop")}</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      {tier.desktop ? <Check size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" /> : <X size={16} className="text-slate-400 flex-shrink-0 mt-0.5" />}
-                      <span>{t("diff.desktop")}</span>
+                      {tier.offline ? <Check size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" /> : <X size={16} className="text-slate-400 flex-shrink-0 mt-0.5" />}
+                      <span>{t("diff.offline")}</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <Check size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" />
@@ -299,18 +302,18 @@ function PricingContent({ locale }: { locale: string }) {
                   ))}
                 </tr>
                 <tr>
-                  <td className="px-4 py-3 text-sm font-medium text-slate-700">{t("diff.webSaas")}</td>
-                  {TIERS.map((tier) => (
-                    <td key={tier.key} className="px-4 py-3 text-center">
-                      {tier.web ? <Check size={20} className="inline text-emerald-600" /> : <X size={20} className="inline text-slate-300" />}
-                    </td>
-                  ))}
-                </tr>
-                <tr>
                   <td className="px-4 py-3 text-sm font-medium text-slate-700">{t("diff.desktop")}</td>
                   {TIERS.map((tier) => (
                     <td key={tier.key} className="px-4 py-3 text-center">
                       {tier.desktop ? <Check size={20} className="inline text-emerald-600" /> : <X size={20} className="inline text-slate-300" />}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="px-4 py-3 text-sm font-medium text-slate-700">{t("diff.offline")}</td>
+                  {TIERS.map((tier) => (
+                    <td key={tier.key} className="px-4 py-3 text-center">
+                      {tier.offline ? <Check size={20} className="inline text-emerald-600" /> : <X size={20} className="inline text-slate-300" />}
                     </td>
                   ))}
                 </tr>
