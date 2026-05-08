@@ -199,7 +199,7 @@ export function Navbar() {
                         className="flex items-center gap-2 px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 border-t border-slate-100"
                       >
                         <ShieldCheck size={14} />
-                        {locale === "th" ? "Admin: คำสั่งซื้อ" : "Admin: Orders"}
+                        {locale === "th" ? "Admin Panel" : "Admin Panel"}
                       </Link>
                     )}
                     <button
@@ -277,7 +277,7 @@ export function Navbar() {
                     className="mt-2 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-300 hover:bg-amber-100 text-amber-800 text-sm font-bold rounded-md"
                   >
                     <ShieldCheck size={14} />
-                    {locale === "th" ? "Admin: คำสั่งซื้อ" : "Admin: Orders"}
+                    {locale === "th" ? "Admin Panel" : "Admin Panel"}
                   </Link>
                 )}
               </div>
