@@ -78,7 +78,8 @@ const TIERS = [
     border: "border-amber-400",
     button: "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white",
     originalPrice: 89000,
-    promoPrice: 44500,
+    promoPrice: 26700,
+    discountPct: 70,
     suffix: { th: "ครั้งเดียว", en: "Once" },
     filesPerDay: { th: "ไม่จำกัด", en: "Unlimited" },
     desktop: true,
@@ -185,11 +186,16 @@ function PricingContent({ locale }: { locale: string }) {
                         {tier.suffix[locale as "th" | "en"]}
                       </span>
                     </div>
-                    {tier.originalPrice && (
-                      <div className="text-xs text-rose-600 font-bold mt-1">
-                        🎉 {locale === "th" ? "ลด 50% ราคาเปิดตัว" : "50% OFF Launch Promo"}
-                      </div>
-                    )}
+                    {tier.originalPrice && (() => {
+                      const pct = ("discountPct" in tier && typeof tier.discountPct === "number")
+                        ? tier.discountPct
+                        : Math.round((1 - tier.promoPrice / tier.originalPrice) * 100);
+                      return (
+                        <div className={`text-xs font-bold mt-1 ${pct >= 70 ? "text-rose-700 bg-rose-100 inline-block px-2 py-0.5 rounded animate-pulse" : "text-rose-600"}`}>
+                          🎉 {locale === "th" ? `ลด ${pct}% ราคาเปิดตัว` : `${pct}% OFF Launch Promo`}
+                        </div>
+                      );
+                    })()}
                     {/* Yearly bonus banner */}
                     {tier.key === "yearly" && (
                       <div className="mt-2 px-2 py-1.5 rounded-md bg-gradient-to-r from-emerald-100 to-teal-100 border border-emerald-300 text-xs font-bold text-emerald-800">
