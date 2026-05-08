@@ -199,6 +199,16 @@ function HomePageContent({ locale }: { locale: string }) {
               desc={tPrev("spot4.desc")}
               bullets={[tPrev("spot4.b1"), tPrev("spot4.b2"), tPrev("spot4.b3")]}
             />
+            <SpotlightRow
+              imgSrc="/screenshots/excel-export.png"
+              imgAlt="CNC Costify AI — Excel export with multi-sheet quotes"
+              imgSide="left"
+              accent="blue"
+              badge={tPrev("spot5.badge")}
+              title={tPrev("spot5.title")}
+              desc={tPrev("spot5.desc")}
+              bullets={[tPrev("spot5.b1"), tPrev("spot5.b2"), tPrev("spot5.b3")]}
+            />
           </div>
         </div>
       </section>

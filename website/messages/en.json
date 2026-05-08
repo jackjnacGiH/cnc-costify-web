@@ -124,6 +124,14 @@
       "b1": "✓ Heat / chemical / corrosion resistance",
       "b2": "✓ Substitutes + spec comparison + pricing",
       "b3": "✓ Hardening / coating / surface treatment"
+    },
+    "spot5": {
+      "badge": "EXCEL EXPORT",
+      "title": "Export to Excel — edit, share, turn into a quote in seconds",
+      "desc": "Every calculation auto-saves to your Excel file — one sheet per quote with technical notes, totals, and stock sizes. Send straight to your customer or sales team in your shop's standard format.",
+      "b1": "✓ Auto new sheet on every save — never overwrites previous quotes",
+      "b2": "✓ Pretty formatting + aligned numbers + highlighted totals",
+      "b3": "✓ Open in Excel and add margin, discount, VAT, or your logo — instantly turn it into a customer-facing quote"
     }
   },
   "Features": {
