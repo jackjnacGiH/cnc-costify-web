@@ -167,7 +167,7 @@ function PricingContent({ locale }: { locale: string }) {
                     </div>
                   )}
                   {isUltimate && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-xs font-extrabold rounded-full shadow-lg shadow-amber-500/40 whitespace-nowrap animate-pulse">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-xs font-extrabold rounded-full shadow-lg shadow-amber-500/40 whitespace-nowrap">
                       🔥 {locale === "th" ? "ยิ่งกว่าคุ้ม" : "Ultimate Deal"}
                     </div>
                   )}
