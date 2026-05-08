@@ -204,6 +204,175 @@ function rejectOrder({ orderId, adminUserId, reason }) {
     return { ok: true, order: getOrder(orderId) };
 }
 
+/**
+ * Compute the new valid_until ms for a license renewal/issuance.
+ *   - newPlan === 'lifetime'                  → returns null (forever)
+ *   - existingLicense is lifetime + !force    → throws 'user_already_lifetime'
+ *   - else                                    → now + (planDays + remainingDays)*86400000
+ *
+ * `existingLicense` is the most-recent active license row for the user, or null.
+ * Pre-expired remaining days clamp to 0.
+ */
+function computeRenewalValidUntil({ existingLicense, newPlan, force = false, now = Date.now() }) {
+    const planLc = String(newPlan || '').toLowerCase();
+    if (!isValidPlan(planLc)) throw new Error('invalid_plan');
+
+    // Promoting to lifetime always wins
+    if (planLc === 'lifetime') {
+        return { validUntilMs: null, remainingDays: 0, planDays: PLAN_VALIDITY_DAYS.lifetime, isLifetime: true };
+    }
+
+    // Block downgrade from lifetime unless force
+    if (existingLicense && existingLicense.revoked === 0 && existingLicense.plan === 'lifetime') {
+        if (!force) {
+            const e = new Error('user_already_lifetime');
+            e.code = 'user_already_lifetime';
+            throw e;
+        }
+        // force=true → fall through and treat as fresh issuance
+    }
+
+    const planDays = PLAN_VALIDITY_DAYS[planLc];
+    let remainingDays = 0;
+    if (existingLicense && existingLicense.revoked === 0 && existingLicense.valid_until) {
+        const remainingMs = existingLicense.valid_until - now;
+        remainingDays = Math.max(0, Math.ceil(remainingMs / 86400000));
+    }
+    const totalDays = planDays + remainingDays;
+    return {
+        validUntilMs: now + totalDays * 86400000,
+        remainingDays,
+        planDays,
+        totalDays,
+        isLifetime: false,
+    };
+}
+
+/**
+ * Issue a license directly without an order. Used by /api/admin/license/generate.
+ * Caller must already have admin auth.
+ *
+ * Steps:
+ *   1. Resolve user (user_id or user_email — must exist)
+ *   2. Reject 'monthly' (online-only by design)
+ *   3. Find latest active license (revoked=0) for user
+ *   4. Compute new valid_until via renewal logic
+ *   5. Generate license_key + sign payload
+ *   6. INSERT new licenses row
+ *   7. Mark prior license revoked='superseded' (preserve audit trail)
+ *   8. UPDATE users.plan + plan_expires_at
+ *
+ * Returns { license, license_dat_json, supersededLicense, daysAdded, totalDays, validUntilMs }
+ */
+function issueLicenseDirect({ userId, userEmail, plan, hardwareId, adminUserId, notes, force }) {
+    const planLc = String(plan || '').toLowerCase();
+    if (planLc === 'monthly') throw new Error('monthly_not_supported_for_license_dat');
+    if (!PLANS_WITH_DAT.has(planLc)) throw new Error('invalid_plan');
+    if (!hardwareId || typeof hardwareId !== 'string' || hardwareId.length < 8) {
+        throw new Error('missing_hardware_id');
+    }
+
+    const db = getDb();
+
+    // Resolve user
+    let user = null;
+    if (userId) {
+        user = db.prepare('SELECT id, email, name, plan FROM users WHERE id = ?').get(userId);
+    } else if (userEmail) {
+        user = db.prepare('SELECT id, email, name, plan FROM users WHERE email = ?').get(String(userEmail).toLowerCase().trim());
+    }
+    if (!user) throw new Error('user_not_found');
+
+    // Latest active license for this user (any HW)
+    const existingLicense = db.prepare(`
+        SELECT id, plan, hardware_id, valid_until, revoked
+        FROM licenses
+        WHERE user_id = ? AND revoked = 0
+        ORDER BY created_at DESC LIMIT 1
+    `).get(user.id);
+
+    const renewal = computeRenewalValidUntil({ existingLicense, newPlan: planLc, force });
+
+    // Build + sign new license.dat
+    // For lifetime we use PLAN_VALIDITY_DAYS.lifetime (~100 yr) so signed expiry exists
+    const validDays = renewal.isLifetime
+        ? PLAN_VALIDITY_DAYS.lifetime
+        : Math.max(1, Math.ceil((renewal.validUntilMs - Date.now()) / 86400000));
+    const licenseKey = require('./licenseSigner').generateLicenseKey();
+    const datJson = require('./licenseSigner').buildAndSign({
+        userId: user.id,
+        userEmail: user.email,
+        plan: planLc,
+        hardwareId,
+        validDays,
+        licenseKey,
+    });
+
+    const now = Date.now();
+    const validFrom = now;
+    const validUntil = renewal.isLifetime ? (now + validDays * 86400000) : renewal.validUntilMs;
+
+    // Insert new license + supersede the old one in a single transaction
+    const tx = db.transaction(() => {
+        const result = db.prepare(`
+            INSERT INTO licenses (user_id, license_key, plan, hardware_id, valid_from, valid_until, revoked, license_dat_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+        `).run(user.id, licenseKey, planLc, hardwareId, validFrom, validUntil, JSON.stringify(datJson), now);
+
+        let supersededLicense = null;
+        if (existingLicense) {
+            db.prepare(`
+                UPDATE licenses
+                   SET revoked = 1
+                 WHERE id = ?
+            `).run(existingLicense.id);
+            supersededLicense = existingLicense;
+        }
+
+        // Update user plan + expires_at (null for lifetime)
+        const userPlanExpiresAt = renewal.isLifetime ? null : validUntil;
+        db.prepare('UPDATE users SET plan = ?, plan_expires_at = ? WHERE id = ?')
+            .run(planLc, userPlanExpiresAt, user.id);
+
+        return {
+            license: db.prepare('SELECT * FROM licenses WHERE id = ?').get(result.lastInsertRowid),
+            supersededLicense,
+        };
+    });
+    const { license, supersededLicense } = tx();
+
+    return {
+        license,
+        license_dat_json: datJson,
+        supersededLicense,
+        daysAdded: renewal.planDays,
+        remainingDays: renewal.remainingDays,
+        totalDays: renewal.totalDays,
+        validUntilMs: renewal.isLifetime ? null : validUntil,
+        isLifetime: renewal.isLifetime,
+    };
+}
+
+/** Mark a license revoked (admin action). */
+function revokeLicense({ licenseId, adminUserId, reason }) {
+    if (!licenseId) throw new Error('missing_license_id');
+    const db = getDb();
+    const lic = db.prepare('SELECT * FROM licenses WHERE id = ?').get(licenseId);
+    if (!lic) throw new Error('license_not_found');
+    if (lic.revoked) throw new Error('already_revoked');
+    db.prepare('UPDATE licenses SET revoked = 1 WHERE id = ?').run(licenseId);
+    // Best-effort: clear users.plan_expires_at if this was their active license
+    try {
+        const stillActive = db.prepare(`
+            SELECT id FROM licenses WHERE user_id = ? AND revoked = 0 ORDER BY created_at DESC LIMIT 1
+        `).get(lic.user_id);
+        if (!stillActive) {
+            db.prepare('UPDATE users SET plan = ?, plan_expires_at = NULL WHERE id = ?').run('free', lic.user_id);
+        }
+    } catch (_) {}
+    return { ok: true, license: db.prepare('SELECT * FROM licenses WHERE id = ?').get(licenseId) };
+}
+
 module.exports = {
     PLAN_VALIDITY_DAYS,
     PLAN_AMOUNT_THB,
@@ -215,4 +384,7 @@ module.exports = {
     listOrders,
     confirmOrder,
     rejectOrder,
+    computeRenewalValidUntil,
+    issueLicenseDirect,
+    revokeLicense,
 };

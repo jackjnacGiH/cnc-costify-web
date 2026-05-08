@@ -178,6 +178,89 @@ async function consumeResetToken(token, newPassword) {
     return user.id;
 }
 
+/**
+ * Phase A.2 — Admin user search.
+ * Case-insensitive partial match on email or name. Optional plan filter.
+ * Returns { users, total }.
+ */
+function searchUsers({ q = '', plan = null, limit = 50, offset = 0 } = {}) {
+    const db = getDb();
+    const where = [];
+    const params = [];
+    if (q && q.trim()) {
+        const like = `%${q.trim().toLowerCase()}%`;
+        where.push("(LOWER(email) LIKE ? OR LOWER(COALESCE(name, '')) LIKE ?)");
+        params.push(like, like);
+    }
+    if (plan && ['free', 'monthly', 'yearly', 'lifetime'].includes(String(plan).toLowerCase())) {
+        where.push('plan = ?');
+        params.push(String(plan).toLowerCase());
+    }
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const total = db.prepare(`SELECT COUNT(*) AS c FROM users ${whereSql}`).get(...params).c;
+    const lim = Math.min(200, Math.max(1, parseInt(limit, 10) || 50));
+    const off = Math.max(0, parseInt(offset, 10) || 0);
+    const rows = db.prepare(`
+        SELECT id, email, name, company, phone, plan, plan_expires_at, verified, role, created_at, last_login_at, last_ip
+        FROM users
+        ${whereSql}
+        ORDER BY (last_login_at IS NULL), last_login_at DESC, created_at DESC
+        LIMIT ? OFFSET ?
+    `).all(...params, lim, off);
+    return { users: rows, total };
+}
+
+/**
+ * Phase A.2 — Aggregate everything an admin would want for one user.
+ * Used by /admin/users/[id] page. Returns null if user not found.
+ */
+function getUserAdminDetail(userId) {
+    if (!userId) return null;
+    const db = getDb();
+    const user = db.prepare(`
+        SELECT id, email, name, company, phone, plan, plan_expires_at,
+               verified, role, created_at, last_login_at, last_ip
+        FROM users WHERE id = ?
+    `).get(userId);
+    if (!user) return null;
+
+    const orders = db.prepare(`
+        SELECT id, plan, amount, currency, status, slip_path, payment_ref, hardware_id,
+               created_at, confirmed_at, notes
+        FROM orders
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+    `).all(userId);
+
+    const licenses = db.prepare(`
+        SELECT id, license_key, plan, hardware_id, valid_from, valid_until, revoked, created_at
+        FROM licenses
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+    `).all(userId);
+
+    const devices = db.prepare(`
+        SELECT id, device_name, os, app_version, hardware_id,
+               local_license_status, local_license_days_left,
+               created_at, last_used_at, last_ip, revoked
+        FROM device_tokens
+        WHERE user_id = ?
+        ORDER BY (last_used_at IS NULL), last_used_at DESC, created_at DESC
+    `).all(userId);
+
+    // Today's usage count (Asia/Bangkok)
+    let usageToday = 0;
+    try {
+        const now = Date.now();
+        const TH_OFFSET_MS = 7 * 60 * 60 * 1000;
+        const th = new Date(now + TH_OFFSET_MS);
+        const dayKey = `${th.getUTCFullYear()}-${String(th.getUTCMonth() + 1).padStart(2, '0')}-${String(th.getUTCDate()).padStart(2, '0')}`;
+        usageToday = db.prepare('SELECT COUNT(*) AS c FROM usage_log WHERE user_id = ? AND day_key = ?').get(userId, dayKey).c;
+    } catch (_) {}
+
+    return { user, orders, licenses, devices, usage_today: usageToday };
+}
+
 module.exports = {
     createUser,
     findOrCreateGoogleUser,
@@ -190,5 +273,7 @@ module.exports = {
     verifyEmailToken,
     setResetToken,
     consumeResetToken,
+    searchUsers,
+    getUserAdminDetail,
     _safeUser,
 };

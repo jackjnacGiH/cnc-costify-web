@@ -2506,6 +2506,135 @@ app.post('/api/admin/orders/:id/reject', requireAdmin, (req, res) => {
     }
 });
 
+// ─── Phase A.2: Admin License Generator + User Management ────────────────
+
+// User search (admin only)
+app.get('/api/admin/users', requireAdmin, (req, res) => {
+    try {
+        const q = req.query.q || '';
+        const plan = req.query.plan || null;
+        const limit = parseInt(req.query.limit, 10) || 50;
+        const offset = parseInt(req.query.offset, 10) || 0;
+        const result = authDb.searchUsers({ q, plan, limit, offset });
+        return res.json({ ok: true, ...result });
+    } catch (err) {
+        console.error('[admin/users] failed:', err.message);
+        return res.status(500).json({ ok: false, error: 'search_failed' });
+    }
+});
+
+// User detail (admin only) — full bundle for /admin/users/[id]
+app.get('/api/admin/users/:id', requireAdmin, (req, res) => {
+    try {
+        const userId = parseInt(req.params.id, 10);
+        if (!userId) return res.status(400).json({ ok: false, error: 'invalid_id' });
+        const detail = authDb.getUserAdminDetail(userId);
+        if (!detail) return res.status(404).json({ ok: false, error: 'user_not_found' });
+        return res.json({ ok: true, ...detail });
+    } catch (err) {
+        console.error('[admin/users/:id] failed:', err.message);
+        return res.status(500).json({ ok: false, error: 'lookup_failed' });
+    }
+});
+
+// Direct license generation (admin only) — bypass order flow
+app.post('/api/admin/license/generate', requireAdmin, async (req, res) => {
+    try {
+        const { user_id, user_email, hardware_id, plan, notes, force } = req.body || {};
+        if (!hardware_id) return res.status(400).json({ ok: false, error: 'missing_hardware_id' });
+        if (!plan) return res.status(400).json({ ok: false, error: 'missing_plan' });
+        if (!user_id && !user_email) return res.status(400).json({ ok: false, error: 'missing_user' });
+
+        const result = orderManager.issueLicenseDirect({
+            userId: user_id || null,
+            userEmail: user_email || null,
+            plan,
+            hardwareId: hardware_id,
+            adminUserId: req.user.sub,
+            notes,
+            force: !!force,
+        });
+
+        // Best-effort: send delivery email
+        if (result.license) {
+            try {
+                const userRow = authDb.findUserById(result.license.user_id);
+                await emailLib.sendLicenseDeliveryEmail?.({
+                    to: userRow.email,
+                    name: userRow.name,
+                    plan: result.license.plan,
+                    license: result.license,
+                });
+            } catch (e) {
+                console.warn('[admin/license/generate] delivery email failed:', e.message);
+            }
+        }
+
+        return res.json({ ok: true, ...result });
+    } catch (err) {
+        const known = ['monthly_not_supported_for_license_dat', 'invalid_plan', 'missing_hardware_id', 'user_not_found', 'user_already_lifetime', 'missing_user'];
+        const status = known.includes(err.message) ? 400 : 500;
+        if (err.message === 'user_already_lifetime') {
+            return res.status(409).json({ ok: false, error: err.message });
+        }
+        if (err.message === 'user_not_found') {
+            return res.status(404).json({ ok: false, error: err.message });
+        }
+        console.error('[admin/license/generate] failed:', err);
+        return res.status(status).json({ ok: false, error: err.message || 'generate_failed' });
+    }
+});
+
+// Revoke a license (admin only)
+app.post('/api/admin/licenses/:id/revoke', requireAdmin, (req, res) => {
+    try {
+        const licenseId = parseInt(req.params.id, 10);
+        if (!licenseId) return res.status(400).json({ ok: false, error: 'invalid_id' });
+        const reason = String(req.body?.reason || '').slice(0, 500);
+        const result = orderManager.revokeLicense({ licenseId, adminUserId: req.user.sub, reason });
+        return res.json(result);
+    } catch (err) {
+        const known = ['license_not_found', 'already_revoked'];
+        const status = known.includes(err.message) ? 400 : 500;
+        return res.status(status).json({ ok: false, error: err.message || 'revoke_failed' });
+    }
+});
+
+// Admin re-download of a specific license.dat (any user's license)
+app.get('/api/admin/licenses/:id/dat', requireAdmin, (req, res) => {
+    try {
+        const licenseId = parseInt(req.params.id, 10);
+        if (!licenseId) return res.status(400).json({ ok: false, error: 'invalid_id' });
+        const lic = feedbackDb.getDb().prepare(`
+            SELECT license_key, license_dat_json FROM licenses WHERE id = ?
+        `).get(licenseId);
+        if (!lic) return res.status(404).json({ ok: false, error: 'license_not_found' });
+        if (!lic.license_dat_json) return res.status(404).json({ ok: false, error: 'no_dat_payload' });
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="license-${lic.license_key}.dat"`);
+        return res.send(lic.license_dat_json);
+    } catch (err) {
+        console.error('[admin/licenses/dat] failed:', err.message);
+        return res.status(500).json({ ok: false, error: 'download_failed' });
+    }
+});
+
+// Admin: revoke a device token (re-uses desktopLink)
+app.post('/api/admin/devices/:id/revoke', requireAdmin, (req, res) => {
+    try {
+        const deviceId = parseInt(req.params.id, 10);
+        if (!deviceId) return res.status(400).json({ ok: false, error: 'invalid_id' });
+        // Find owner so we can pass to revokeDeviceToken (it scopes by user)
+        const row = feedbackDb.getDb().prepare('SELECT user_id FROM device_tokens WHERE id = ?').get(deviceId);
+        if (!row) return res.status(404).json({ ok: false, error: 'not_found' });
+        const changes = desktopLink.revokeDeviceToken(deviceId, row.user_id);
+        return res.json({ ok: true, revoked: changes > 0 });
+    } catch (err) {
+        console.error('[admin/devices/revoke] failed:', err.message);
+        return res.status(500).json({ ok: false, error: 'revoke_failed' });
+    }
+});
+
 // Lookup license metadata (used by /account UI to render the License card)
 app.get('/api/account/license-info', requireAuth, (req, res) => {
     try {
