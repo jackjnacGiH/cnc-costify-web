@@ -48,12 +48,9 @@ function isValidPlan(plan) {
  * Create a pending order. Caller already authenticated.
  * Returns { ok: true, order } or throws on bad input.
  */
-function createOrder({ userId, plan, slipPath, paymentRef, notes }) {
+function createOrder({ userId, plan, slipPath, paymentRef, notes, hardwareId }) {
     if (!userId) throw new Error('missing_user');
     const planLc = String(plan || '').toLowerCase();
-    if (!isValidPlan(planLc) || planLc === 'monthly') {
-        // Monthly is allowed too, but only via this same flow.
-    }
     if (!isValidPlan(planLc)) throw new Error('invalid_plan');
     const amount = PLAN_AMOUNT_THB[planLc];
     if (!amount) throw new Error('amount_not_configured');
@@ -61,9 +58,9 @@ function createOrder({ userId, plan, slipPath, paymentRef, notes }) {
     const db = getDb();
     const now = Date.now();
     const result = db.prepare(`
-        INSERT INTO orders (user_id, plan, amount, currency, status, payment_method, slip_path, payment_ref, created_at, notes)
-        VALUES (?, ?, ?, 'THB', 'pending', 'promptpay', ?, ?, ?, ?)
-    `).run(userId, planLc, amount, slipPath || null, paymentRef || null, now, notes || null);
+        INSERT INTO orders (user_id, plan, amount, currency, status, payment_method, slip_path, payment_ref, hardware_id, created_at, notes)
+        VALUES (?, ?, ?, 'THB', 'pending', 'promptpay', ?, ?, ?, ?, ?)
+    `).run(userId, planLc, amount, slipPath || null, paymentRef || null, hardwareId || null, now, notes || null);
     return getOrder(result.lastInsertRowid);
 }
 
@@ -143,14 +140,20 @@ function confirmOrder({ orderId, adminUserId }) {
     // 2. For paid offline plans: generate license.dat
     let license = null;
     if (PLANS_WITH_DAT.has(planLc)) {
-        // Pull most-recent device_token hardware_id (best-effort)
-        const dt = db.prepare(`
-            SELECT hardware_id FROM device_tokens
-             WHERE user_id = ? AND revoked = 0 AND hardware_id IS NOT NULL
-             ORDER BY last_used_at DESC, created_at DESC
-             LIMIT 1
-        `).get(order.user_id);
-        const hwId = dt?.hardware_id || '';
+        // Hardware ID priority:
+        //   1. order.hardware_id (user provided at checkout — most explicit)
+        //   2. user's most-recent device_token hardware_id (signed-in device)
+        //   3. empty string (will fail HW check on Desktop until user re-issues)
+        let hwId = (order.hardware_id || '').trim();
+        if (!hwId) {
+            const dt = db.prepare(`
+                SELECT hardware_id FROM device_tokens
+                 WHERE user_id = ? AND revoked = 0 AND hardware_id IS NOT NULL
+                 ORDER BY last_used_at DESC, created_at DESC
+                 LIMIT 1
+            `).get(order.user_id);
+            hwId = dt?.hardware_id || '';
+        }
 
         const licenseKey = licenseSigner.generateLicenseKey();
         const datJson = licenseSigner.buildAndSign({

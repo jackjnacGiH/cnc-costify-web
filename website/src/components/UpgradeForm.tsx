@@ -1,8 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Upload, FileImage, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Upload, FileImage, AlertCircle, CheckCircle2, Loader2, Cpu } from "lucide-react";
 
 type Plan = "monthly" | "yearly" | "lifetime";
 
@@ -14,11 +13,11 @@ export function UpgradeForm({
   amount: number;
   userEmail: string;
 }) {
-  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [slip, setSlip] = useState<File | null>(null);
   const [paymentRef, setPaymentRef] = useState("");
   const [notes, setNotes] = useState("");
+  const [hardwareId, setHardwareId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<number | null>(null);
@@ -48,6 +47,7 @@ export function UpgradeForm({
       fd.append("slip", slip);
       if (paymentRef) fd.append("payment_ref", paymentRef);
       if (notes) fd.append("notes", notes);
+      if (hardwareId.trim()) fd.append("hardware_id", hardwareId.trim());
       const r = await fetch("/api/order/create", {
         method: "POST",
         body: fd,
@@ -156,6 +156,31 @@ export function UpgradeForm({
           onChange={handleFile}
         />
       </div>
+
+      {/* Hardware ID — only relevant for plans that ship a license.dat */}
+      {(plan === "yearly" || plan === "lifetime") && (
+        <div className="mb-4">
+          <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+            <Cpu size={14} className="text-blue-600" />
+            {locale === "th" ? "Hardware ID (สำหรับผูก License)" : "Hardware ID (license binding)"}
+            <span className="text-xs font-normal text-slate-500">
+              ({locale === "th" ? "ถ้าไม่กรอก จะใช้ของเครื่องที่ Sign in ล่าสุด" : "leave blank to use last signed-in device"})
+            </span>
+          </label>
+          <input
+            type="text"
+            value={hardwareId}
+            onChange={(e) => setHardwareId(e.target.value)}
+            placeholder="sha256:abcdef..."
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-xs text-slate-500 mt-1.5">
+            {locale === "th"
+              ? <>💡 หา Hardware ID ได้ที่ Desktop App → แท็บ <strong>"สิทธิ์การใช้งาน"</strong> → กดปุ่ม <strong>"คัดลอก"</strong> ข้าง Hardware ID</>
+              : <>💡 Find your Hardware ID in Desktop App → <strong>License</strong> tab → click <strong>Copy</strong> next to Hardware ID</>}
+          </p>
+        </div>
+      )}
 
       {/* Payment ref (optional) */}
       <div className="mb-4">

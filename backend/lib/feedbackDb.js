@@ -223,6 +223,23 @@ function _initSchema(db) {
     _addColumnIfMissing(db, 'device_tokens', 'local_license_days_left', 'INTEGER');
     _addColumnIfMissing(db, 'device_tokens', 'local_license_reported_at', 'INTEGER');
     try { db.exec('CREATE INDEX IF NOT EXISTS idx_device_tokens_hw ON device_tokens(hardware_id)'); } catch (_) {}
+
+    // Phase A: orders table may have been created before payment_method etc.
+    // were added. Add all Phase-A-era columns idempotently.
+    _addColumnIfMissing(db, 'orders', 'payment_method', "TEXT");
+    _addColumnIfMissing(db, 'orders', 'slip_path', 'TEXT');
+    _addColumnIfMissing(db, 'orders', 'payment_ref', 'TEXT');
+    _addColumnIfMissing(db, 'orders', 'confirmed_at', 'INTEGER');
+    _addColumnIfMissing(db, 'orders', 'confirmed_by', 'INTEGER');
+    _addColumnIfMissing(db, 'orders', 'notes', 'TEXT');
+    _addColumnIfMissing(db, 'orders', 'currency', "TEXT DEFAULT 'THB'");
+    // User-supplied hardware_id at order time (overrides device-token lookup)
+    _addColumnIfMissing(db, 'orders', 'hardware_id', 'TEXT');
+
+    // Phase A: licenses table — make sure all columns exist
+    _addColumnIfMissing(db, 'licenses', 'license_dat_json', 'TEXT');
+    _addColumnIfMissing(db, 'licenses', 'hardware_id', 'TEXT');
+    _addColumnIfMissing(db, 'licenses', 'plan', 'TEXT');
 }
 
 function _addColumnIfMissing(db, table, column, type) {

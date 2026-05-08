@@ -2389,6 +2389,7 @@ app.post('/api/order/create', requireAuth, (req, res) => {
             }
             const paymentRef = req.body?.payment_ref || null;
             const notes = req.body?.notes || null;
+            const hardwareId = (req.body?.hardware_id || '').trim() || null;
             const slipPath = req.file ? `/uploads/slips/${path.basename(req.file.path)}` : null;
             // Slip is required for non-zero plans
             const expectedAmount = orderManager.PLAN_AMOUNT_THB[plan];
@@ -2401,6 +2402,7 @@ app.post('/api/order/create', requireAuth, (req, res) => {
                 slipPath,
                 paymentRef,
                 notes,
+                hardwareId,
             });
 
             // Best-effort: notify admins
