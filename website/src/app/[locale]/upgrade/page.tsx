@@ -188,19 +188,26 @@ function OrderSection({ locale, planKey, userEmail }: {
             💸 {locale === "th" ? "ช่องทางชำระเงิน" : "Payment options"}
           </h3>
 
-          {/* QR */}
+          {/* QR — plan-specific (preloaded with the right amount) */}
           <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 mb-3 text-center">
-            <div className="text-xs font-bold text-slate-700 mb-2">📱 PromptPay QR</div>
+            <div className="text-xs font-bold text-slate-700 mb-2">
+              📱 PromptPay QR · {locale === "th" ? "ยอด ฿" : "Amount ฿"}{p.price.toLocaleString()}
+            </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/qr/promptpay-jnac.png"
-              alt="PromptPay QR Code"
-              className="mx-auto w-48 h-48 object-contain bg-white rounded-lg p-2 shadow"
+              src={`/qr/promptpay-${planKey}.png`}
+              alt={`PromptPay QR Code — ${planKey} — ฿${p.price}`}
+              className="mx-auto w-64 max-w-full object-contain bg-white rounded-lg p-2 shadow"
             />
             <div className="text-xs text-slate-600 mt-2">
               {locale === "th" ? "บริษัท เจ แนค (ประเทศไทย) จำกัด" : "J Nac (Thailand) Co., Ltd."}
             </div>
             <div className="text-base font-black text-rose-600 mt-1">฿{p.price.toLocaleString()}</div>
+            <p className="text-[10px] text-slate-500 mt-1">
+              {locale === "th"
+                ? "💡 สแกน QR แล้วยอดจะใส่ให้อัตโนมัติ ไม่ต้องกรอกเอง"
+                : "💡 Scan and the amount auto-fills"}
+            </p>
           </div>
 
           {/* Bank */}
