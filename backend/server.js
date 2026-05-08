@@ -2329,7 +2329,7 @@ setInterval(() => {
 // ─── Phase A: Order / Upgrade Flow ───────────────────────────────────────
 const orderManager = require('./lib/orderManager');
 const multer = require('multer');
-const fs = require('fs');
+// (fs already required at the top of this file)
 
 // Slip uploads land in /opt/cnc-costify/backend/uploads/slips/<timestamp>-<random>.ext
 const _slipDir = path.join(__dirname, 'uploads', 'slips');
