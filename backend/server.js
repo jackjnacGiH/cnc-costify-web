@@ -1998,7 +1998,15 @@ app.post('/api/auth/logout', (req, res) => {
 app.get('/api/auth/me', requireAuth, (req, res) => {
     const user = authDb.findUserById(req.user.sub);
     if (!user) return res.status(404).json({ ok: false, error: 'user_not_found' });
-    return res.json({ ok: true, user: authDb._safeUser(user) });
+    const safe = authDb._safeUser(user);
+    // Phase A: lightweight admin flag — derived from ADMIN_EMAILS env so the
+    // navbar can show the 'Admin' menu item only to authorized accounts. The
+    // /admin/* endpoints still re-check requireAdmin, so this flag is purely
+    // a UI hint, never a permission.
+    const adminEmails = (process.env.ADMIN_EMAILS || '')
+        .toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+    safe.is_admin = adminEmails.includes(String(user.email || '').toLowerCase());
+    return res.json({ ok: true, user: safe });
 });
 
 // ─── Google OAuth (Phase 2.2 ext) ────────────────────────────────────────

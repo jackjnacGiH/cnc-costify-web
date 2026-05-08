@@ -3,13 +3,14 @@
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Menu, X, User as UserIcon, LogOut } from "lucide-react";
+import { Menu, X, User as UserIcon, LogOut, ShieldCheck } from "lucide-react";
 
 type AuthUser = {
   id: number;
   email: string;
   name?: string | null;
   plan?: string;
+  is_admin?: boolean;
 } | null;
 
 type LocalLicense = {
@@ -191,9 +192,19 @@ export function Navbar() {
                       <UserIcon size={14} />
                       {locale === "th" ? "บัญชีของฉัน" : "My Account"}
                     </Link>
+                    {user.is_admin && (
+                      <Link
+                        href={`/${locale}/admin/orders`}
+                        onClick={() => setAccountMenuOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 border-t border-slate-100"
+                      >
+                        <ShieldCheck size={14} />
+                        {locale === "th" ? "Admin: คำสั่งซื้อ" : "Admin: Orders"}
+                      </Link>
+                    )}
                     <button
                       onClick={handleSignOut}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50"
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 border-t border-slate-100"
                     >
                       <LogOut size={14} />
                       {locale === "th" ? "ออกจากระบบ" : "Sign out"}
@@ -259,6 +270,16 @@ export function Navbar() {
                     {locale === "th" ? "ออก" : "Sign out"}
                   </button>
                 </div>
+                {user.is_admin && (
+                  <Link
+                    href={`/${locale}/admin/orders`}
+                    onClick={() => setOpen(false)}
+                    className="mt-2 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-300 hover:bg-amber-100 text-amber-800 text-sm font-bold rounded-md"
+                  >
+                    <ShieldCheck size={14} />
+                    {locale === "th" ? "Admin: คำสั่งซื้อ" : "Admin: Orders"}
+                  </Link>
+                )}
               </div>
             )}
 
