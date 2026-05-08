@@ -87,6 +87,7 @@ const TIERS = [
     duration: "lifetime",
     license: true,
     href: "/upgrade?plan=lifetime",
+    ultimate: true,
   },
 ] as const;
 
@@ -133,6 +134,7 @@ function PricingContent({ locale }: { locale: string }) {
               const Icon = tier.icon;
               const isPopular = "popular" in tier && tier.popular;
               const isBestValue = "bestValue" in tier && tier.bestValue;
+              const isUltimate = "ultimate" in tier && tier.ultimate;
               // Per-tier hover glow color (matches the tier's accent)
               const hoverGlow: Record<string, string> = {
                 slate:  "hover:shadow-slate-400/30 hover:border-slate-400",
@@ -140,14 +142,15 @@ function PricingContent({ locale }: { locale: string }) {
                 purple: "hover:shadow-purple-500/40 hover:border-purple-500",
                 amber:  "hover:shadow-amber-500/40 hover:border-amber-500",
               };
+              const featured = isPopular || isBestValue || isUltimate;
               return (
                 <div
                   key={tier.key}
                   className={`group relative bg-gradient-to-br ${tier.gradient} border-2 ${tier.border} rounded-2xl p-6 ${
-                    isPopular || isBestValue ? "shadow-2xl scale-105 z-10" : "shadow-md"
+                    featured ? "shadow-2xl scale-105 z-10" : "shadow-md"
                   } transition-all duration-300 ease-out
                      hover:-translate-y-2 hover:shadow-2xl ${hoverGlow[tier.color] || ""}
-                     ${isPopular || isBestValue ? "hover:scale-[1.08]" : "hover:scale-[1.03]"}
+                     ${featured ? "hover:scale-[1.08]" : "hover:scale-[1.03]"}
                      cursor-pointer`}
                 >
                   {isPopular && (
@@ -158,6 +161,11 @@ function PricingContent({ locale }: { locale: string }) {
                   {isBestValue && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-purple-600 text-white text-xs font-bold rounded-full shadow-md">
                       💎 {locale === "th" ? "คุ้มที่สุด" : "Best Value"}
+                    </div>
+                  )}
+                  {isUltimate && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-xs font-extrabold rounded-full shadow-lg shadow-amber-500/40 whitespace-nowrap animate-pulse">
+                      🔥 {locale === "th" ? "ยิ่งกว่าคุ้ม" : "Ultimate Deal"}
                     </div>
                   )}
 
