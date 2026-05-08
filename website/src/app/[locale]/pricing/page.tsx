@@ -45,6 +45,7 @@ const TIERS = [
     promoPrice: 445,
     suffix: { th: "/เดือน", en: "/mo" },
     filesPerDay: { th: "30 ไฟล์/วัน", en: "30 files/day" },
+    dailyTeaser: { th: "เพียงวันละ 15 บาท", en: "Just ฿15/day" },
     desktop: true,
     offline: false,
     duration: "days30",
@@ -63,6 +64,7 @@ const TIERS = [
     promoPrice: 4450,
     suffix: { th: "/ปี", en: "/yr" },
     filesPerDay: { th: "ไม่จำกัด", en: "Unlimited" },
+    dailyTeaser: { th: "เพียงวันละ 10 บาท", en: "Just ฿10/day" },
     desktop: true,
     offline: true,
     duration: "days365",
@@ -82,6 +84,7 @@ const TIERS = [
     discountPct: 70,
     suffix: { th: "ครั้งเดียว", en: "Once" },
     filesPerDay: { th: "ไม่จำกัด", en: "Unlimited" },
+    dailyTeaser: { th: "เฉลี่ยวันละ ไม่ถึง 1 บาท", en: "Less than ฿1/day on average" },
     desktop: true,
     offline: true,
     duration: "lifetime",
@@ -181,8 +184,19 @@ function PricingContent({ locale }: { locale: string }) {
 
                   {/* Price */}
                   <div className="mb-6">
+                    {/* Daily teaser — eye-catching, sits ABOVE the strikethrough */}
+                    {("dailyTeaser" in tier && tier.dailyTeaser) ? (
+                      <div className={`inline-block mb-2 px-3 py-1.5 rounded-full font-extrabold text-sm shadow-lg animate-pulse whitespace-nowrap ${
+                        tier.color === "blue"   ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-blue-500/40" :
+                        tier.color === "purple" ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-purple-500/40" :
+                        tier.color === "amber"  ? "bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white shadow-amber-500/40" :
+                                                  "bg-slate-900 text-white"
+                      }`}>
+                        ⚡ {tier.dailyTeaser[locale as "th" | "en"]}
+                      </div>
+                    ) : null}
                     {tier.originalPrice && (
-                      <div className="text-sm text-slate-400 line-through">
+                      <div className="text-base md:text-lg text-slate-400 line-through font-semibold">
                         ฿{formatTHB(tier.originalPrice)}
                       </div>
                     )}
