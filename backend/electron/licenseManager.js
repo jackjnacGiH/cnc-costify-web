@@ -4,11 +4,21 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 // Public key PEM for Ed25519 signature verification.
-// TODO: Replace with your real admin public key and pubkey_id.
-const ADMIN_PUBKEY_ID = 'admin-key-2025';
+// Phase A: production keypair — private key lives on VPS as LICENSE_PRIVATE_KEY.
+// Legacy key kept for backward compatibility with test licenses signed pre-Phase-A.
+const ADMIN_PUBKEY_ID = 'admin-key-2026';
 const ADMIN_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAOCEL276y/rY0gTmC+brztVNhCTbi+WF9WnDAlCLbjmM=
+MCowBQYDK2VwAyEAFOy+bKqUgQpCuRfWMCebgJMeGsqsxh9DVPnjrKSRTz4=
 -----END PUBLIC KEY-----`;
+// Older licenses signed with the prior placeholder key still validate.
+const LEGACY_KEYS = [
+    {
+        id: 'admin-key-2025',
+        pem: `-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAOCEL276y/rY0gTmC+brztVNhCTbi+WF9WnDAlCLbjmM=
+-----END PUBLIC KEY-----`,
+    },
+];
 
 // Utility: canonical JSON with sorted keys (stable, no spaces)
 function canonicalize(obj) {
@@ -57,14 +67,21 @@ function parseBase64(input) {
   try { return Buffer.from(m, 'base64'); } catch (_) { return null; }
 }
 
+function _resolveKey(pubkeyId) {
+    if (pubkeyId === ADMIN_PUBKEY_ID) return ADMIN_PUBLIC_KEY_PEM;
+    const legacy = LEGACY_KEYS.find((k) => k.id === pubkeyId);
+    return legacy ? legacy.pem : null;
+}
+
 function verifySignature(payload, signatureB64, pubkeyId, sigAlg) {
   if (sigAlg !== 'Ed25519') return { ok: false, error: 'Unsupported sig_alg' };
-  if (pubkeyId !== ADMIN_PUBKEY_ID) return { ok: false, error: 'Unknown pubkey_id' };
+  const keyPem = _resolveKey(pubkeyId);
+  if (!keyPem) return { ok: false, error: 'Unknown pubkey_id' };
   const sig = parseBase64(signatureB64);
   if (!sig) return { ok: false, error: 'Invalid signature encoding' };
   try {
     const data = Buffer.from(canonicalize(payload), 'utf8');
-    const ok = crypto.verify(null, data, ADMIN_PUBLIC_KEY_PEM, sig);
+    const ok = crypto.verify(null, data, keyPem, sig);
     return ok ? { ok: true } : { ok: false, error: 'Signature verify failed' };
   } catch (e) {
     return { ok: false, error: String(e) };

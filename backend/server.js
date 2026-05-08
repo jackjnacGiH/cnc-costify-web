@@ -2326,6 +2326,214 @@ setInterval(() => {
     try { desktopLink.cleanupExpiredCodes(); } catch (_) {}
 }, 60 * 60 * 1000).unref();
 
+// ─── Phase A: Order / Upgrade Flow ───────────────────────────────────────
+const orderManager = require('./lib/orderManager');
+const multer = require('multer');
+const fs = require('fs');
+
+// Slip uploads land in /opt/cnc-costify/backend/uploads/slips/<timestamp>-<random>.ext
+const _slipDir = path.join(__dirname, 'uploads', 'slips');
+try { fs.mkdirSync(_slipDir, { recursive: true }); } catch (_) {}
+const _slipUpload = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => cb(null, _slipDir),
+        filename: (req, file, cb) => {
+            const ext = (path.extname(file.originalname || '').toLowerCase().replace(/[^.a-z0-9]/g, '') || '.bin').slice(0, 6);
+            const id = require('crypto').randomBytes(8).toString('hex');
+            cb(null, `${Date.now()}-${id}${ext}`);
+        },
+    }),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+    fileFilter: (req, file, cb) => {
+        const ok = /^image\/(jpeg|png|webp|gif|heic|heif)$/i.test(file.mimetype) ||
+                   /\.(jpg|jpeg|png|webp|gif|heic|heif|pdf)$/i.test(file.originalname || '');
+        cb(null, !!ok);
+    },
+});
+
+// Admin gate: env-driven (no DB writes needed)
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
+    .toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+function requireAdmin(req, res, next) {
+    requireAuth(req, res, () => {
+        const email = String(req.user?.email || '').toLowerCase();
+        if (!email || !ADMIN_EMAILS.includes(email)) {
+            return res.status(403).json({ ok: false, error: 'admin_only' });
+        }
+        next();
+    });
+}
+
+// User: list my orders
+app.get('/api/order/my', requireAuth, (req, res) => {
+    try {
+        const orders = orderManager.listUserOrders(req.user.sub);
+        return res.json({ ok: true, orders });
+    } catch (err) {
+        console.error('[order/my] failed:', err.message);
+        return res.status(500).json({ ok: false, error: 'list_failed' });
+    }
+});
+
+// User: create order with slip upload (multipart/form-data: plan + slip)
+app.post('/api/order/create', requireAuth, (req, res) => {
+    _slipUpload.single('slip')(req, res, async (err) => {
+        if (err) {
+            const code = err.code === 'LIMIT_FILE_SIZE' ? 'slip_too_large' : 'slip_upload_failed';
+            return res.status(400).json({ ok: false, error: code, message: err.message });
+        }
+        try {
+            const plan = String(req.body?.plan || '').toLowerCase();
+            if (!orderManager.isValidPlan(plan)) {
+                return res.status(400).json({ ok: false, error: 'invalid_plan' });
+            }
+            const paymentRef = req.body?.payment_ref || null;
+            const notes = req.body?.notes || null;
+            const slipPath = req.file ? `/uploads/slips/${path.basename(req.file.path)}` : null;
+            // Slip is required for non-zero plans
+            const expectedAmount = orderManager.PLAN_AMOUNT_THB[plan];
+            if (expectedAmount && !slipPath) {
+                return res.status(400).json({ ok: false, error: 'slip_required' });
+            }
+            const order = orderManager.createOrder({
+                userId: req.user.sub,
+                plan,
+                slipPath,
+                paymentRef,
+                notes,
+            });
+
+            // Best-effort: notify admins
+            (async () => {
+                for (const adminEmail of ADMIN_EMAILS) {
+                    try {
+                        await emailLib.sendAdminOrderNotification?.({
+                            to: adminEmail,
+                            order,
+                        });
+                    } catch (e) {
+                        console.warn('[order/create] admin email failed:', e.message);
+                    }
+                }
+            })().catch(() => {});
+
+            return res.json({ ok: true, order });
+        } catch (e) {
+            console.error('[order/create] failed:', e.message);
+            return res.status(400).json({ ok: false, error: e.message || 'create_failed' });
+        }
+    });
+});
+
+// Static slip serving — admin only (slips can contain sensitive bank info)
+app.get('/api/admin/slip/:filename', requireAdmin, (req, res) => {
+    const fname = String(req.params.filename || '').replace(/[^a-zA-Z0-9._-]/g, '');
+    if (!fname) return res.status(400).json({ ok: false, error: 'invalid_filename' });
+    const fpath = path.join(_slipDir, fname);
+    if (!fs.existsSync(fpath)) return res.status(404).json({ ok: false, error: 'not_found' });
+    res.sendFile(fpath);
+});
+
+// Admin: list orders
+app.get('/api/admin/orders', requireAdmin, (req, res) => {
+    try {
+        const status = req.query.status || null;
+        const limit = Math.min(500, parseInt(req.query.limit, 10) || 100);
+        const offset = parseInt(req.query.offset, 10) || 0;
+        const orders = orderManager.listOrders({ status, limit, offset });
+        return res.json({ ok: true, orders });
+    } catch (err) {
+        console.error('[admin/orders] failed:', err.message);
+        return res.status(500).json({ ok: false, error: 'list_failed' });
+    }
+});
+
+// Admin: confirm order (issues license + applies plan + emails user)
+app.post('/api/admin/orders/:id/confirm', requireAdmin, async (req, res) => {
+    try {
+        const orderId = parseInt(req.params.id, 10);
+        if (!orderId) return res.status(400).json({ ok: false, error: 'invalid_id' });
+        const result = orderManager.confirmOrder({
+            orderId,
+            adminUserId: req.user.sub,
+        });
+        // Send delivery email (best-effort)
+        if (result.order && !result.alreadyConfirmed) {
+            try {
+                await emailLib.sendLicenseDeliveryEmail?.({
+                    to: result.order.user_email,
+                    name: result.order.user_name,
+                    plan: result.order.plan,
+                    license: result.license, // may be null for monthly
+                });
+            } catch (e) {
+                console.warn('[admin/orders/confirm] delivery email failed:', e.message);
+            }
+        }
+        return res.json(result);
+    } catch (err) {
+        console.error('[admin/orders/confirm] failed:', err.message);
+        return res.status(400).json({ ok: false, error: err.message || 'confirm_failed' });
+    }
+});
+
+// Admin: reject order
+app.post('/api/admin/orders/:id/reject', requireAdmin, (req, res) => {
+    try {
+        const orderId = parseInt(req.params.id, 10);
+        if (!orderId) return res.status(400).json({ ok: false, error: 'invalid_id' });
+        const reason = String(req.body?.reason || '').slice(0, 500);
+        const result = orderManager.rejectOrder({
+            orderId,
+            adminUserId: req.user.sub,
+            reason,
+        });
+        return res.json(result);
+    } catch (err) {
+        const known = ['order_not_found', 'missing_order'];
+        const status = known.includes(err.message) ? 400 : 500;
+        return res.status(status).json({ ok: false, error: err.message || 'reject_failed' });
+    }
+});
+
+// Lookup license metadata (used by /account UI to render the License card)
+app.get('/api/account/license-info', requireAuth, (req, res) => {
+    try {
+        const db = feedbackDb.getDb();
+        const lic = db.prepare(`
+            SELECT id, license_key, plan, hardware_id, valid_from, valid_until, revoked, created_at
+            FROM licenses
+            WHERE user_id = ? AND revoked = 0
+            ORDER BY created_at DESC LIMIT 1
+        `).get(req.user.sub);
+        return res.json({ ok: true, license: lic || null });
+    } catch (err) {
+        console.error('[account/license-info] failed:', err.message);
+        return res.status(500).json({ ok: false, error: 'lookup_failed' });
+    }
+});
+
+// Lookup my license.dat for download (paid plans only)
+app.get('/api/account/license-dat', requireAuth, (req, res) => {
+    try {
+        const db = feedbackDb.getDb();
+        const lic = db.prepare(`
+            SELECT id, license_key, plan, valid_from, valid_until, license_dat_json
+            FROM licenses
+            WHERE user_id = ? AND revoked = 0
+            ORDER BY created_at DESC LIMIT 1
+        `).get(req.user.sub);
+        if (!lic) return res.status(404).json({ ok: false, error: 'no_license' });
+        // Stream as license.dat download
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="license-${lic.license_key}.dat"`);
+        return res.send(lic.license_dat_json);
+    } catch (err) {
+        console.error('[account/license-dat] failed:', err.message);
+        return res.status(500).json({ ok: false, error: 'download_failed' });
+    }
+});
+
 // Admin-only listing (require simple token from env)
 app.get('/api/feedback/list', (req, res) => {
     const token = req.headers['x-admin-token'] || req.query.token;

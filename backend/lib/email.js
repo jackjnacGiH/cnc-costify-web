@@ -220,9 +220,107 @@ async function sendWelcomeEmail({ to, locale = 'th', name }) {
     return _send({ to, subject: tpl.subject, html: tpl.html, text: tpl.text });
 }
 
+// ─── Phase A: Order/Upgrade emails ──────────────────────────────────────────
+
+function _planLabel(plan, locale) {
+    const map = {
+        monthly:  { th: 'รายเดือน',  en: 'Monthly'  },
+        yearly:   { th: 'รายปี',     en: 'Yearly'   },
+        lifetime: { th: 'ตลอดชีพ',   en: 'Lifetime' },
+    };
+    return map[plan]?.[locale] || plan;
+}
+
+/** Sent to admin when a user submits a new order. */
+async function sendAdminOrderNotification({ to, order }) {
+    const locale = 'th';
+    const planTh = _planLabel(order.plan, 'th');
+    const html = _wrapTemplate(`
+        <h2>🆕 มี Order ใหม่ รอตรวจสอบ</h2>
+        <p>มี order #${order.id} เข้ามา</p>
+        <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
+            <tr><td style="padding:8px; background:#f8fafc; font-weight:bold; border:1px solid #e2e8f0">ลูกค้า</td>
+                <td style="padding:8px; border:1px solid #e2e8f0">${order.user_name || '—'} (${order.user_email})</td></tr>
+            <tr><td style="padding:8px; background:#f8fafc; font-weight:bold; border:1px solid #e2e8f0">แพ็กเกจ</td>
+                <td style="padding:8px; border:1px solid #e2e8f0"><strong>${planTh}</strong></td></tr>
+            <tr><td style="padding:8px; background:#f8fafc; font-weight:bold; border:1px solid #e2e8f0">ยอดเงิน</td>
+                <td style="padding:8px; border:1px solid #e2e8f0">฿${Number(order.amount).toLocaleString('th-TH')}</td></tr>
+            <tr><td style="padding:8px; background:#f8fafc; font-weight:bold; border:1px solid #e2e8f0">สลิป</td>
+                <td style="padding:8px; border:1px solid #e2e8f0">${order.slip_path ? 'มีไฟล์แนบ' : '—'}</td></tr>
+            ${order.payment_ref ? `<tr><td style="padding:8px; background:#f8fafc; font-weight:bold; border:1px solid #e2e8f0">เลขอ้างอิง</td>
+                <td style="padding:8px; border:1px solid #e2e8f0">${order.payment_ref}</td></tr>` : ''}
+        </table>
+        <p style="text-align:center; margin: 24px 0;">
+            <a href="${_baseUrl()}/${locale}/admin/orders" class="btn">ตรวจสอบและยืนยัน Order →</a>
+        </p>
+    `, locale);
+    const text = `มี Order #${order.id} ใหม่จาก ${order.user_email}\nแพ็กเกจ: ${planTh}\nยอด: ฿${order.amount}\n\nตรวจสอบที่: ${_baseUrl()}/${locale}/admin/orders`;
+    return _send({ to, subject: `🆕 Order ใหม่ #${order.id} — ${planTh} ฿${Number(order.amount).toLocaleString()}`, html, text });
+}
+
+/** Sent to user when admin confirms their order — includes license info. */
+async function sendLicenseDeliveryEmail({ to, name, plan, license }) {
+    const locale = 'th';
+    const planTh = _planLabel(plan, 'th');
+    const hasDat = !!license;
+
+    const validUntil = hasDat && license.valid_until
+        ? new Date(license.valid_until).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
+        : null;
+
+    const html = _wrapTemplate(`
+        <h2>🎉 ยืนยันการชำระเงินเรียบร้อย!</h2>
+        <p>สวัสดี${name ? ' ' + name : ''} —</p>
+        <p>ขอบคุณที่อัปเกรดเป็นแพ็กเกจ <strong>${planTh}</strong> กับ CNC Costify AI</p>
+
+        ${hasDat ? `
+            <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:12px; padding:20px; margin:24px 0;">
+                <h3 style="margin:0 0 12px 0; color:#166534;">🔑 License Key ของคุณ</h3>
+                <p style="margin:0 0 8px 0;"><strong>License Key:</strong></p>
+                <div class="code" style="background:white; border:1px solid #86efac;">${license.license_key}</div>
+                <p style="margin:12px 0 8px 0;"><strong>ใช้งานได้ถึง:</strong> ${validUntil || 'ตลอดชีพ ♾️'}</p>
+            </div>
+
+            <h3>📥 วิธีติดตั้ง License บน Desktop App:</h3>
+            <ol style="color:#475569; line-height:1.8;">
+                <li>เข้าเว็บ <a href="${_baseUrl()}/th/account">บัญชีของฉัน</a> → กด <strong>"ดาวน์โหลด License"</strong></li>
+                <li>เปิด CNC Costify AI Desktop → แท็บ <strong>"สิทธิ์การใช้งาน"</strong></li>
+                <li>กด <strong>"นำเข้าสิทธิ์การใช้งาน"</strong> → เลือกไฟล์ <code>license-${license.license_key}.dat</code></li>
+                <li>เริ่มใช้งานได้ทันที — ใช้ออฟไลน์ได้ ไม่ต้องเชื่อมต่ออินเทอร์เน็ต</li>
+            </ol>
+
+            <p style="text-align:center; margin: 24px 0;">
+                <a href="${_baseUrl()}/${locale}/account" class="btn">ไปดาวน์โหลด License →</a>
+            </p>
+        ` : `
+            <div style="background:#eff6ff; border:2px solid #93c5fd; border-radius:12px; padding:20px; margin:24px 0;">
+                <h3 style="margin:0 0 12px 0; color:#1e40af;">✨ แพ็กเกจ ${planTh} ของคุณพร้อมใช้งาน</h3>
+                <p style="margin:0;">เปิดโปรแกรม CNC Costify AI Desktop แล้ว Sign in ด้วยบัญชีเว็บ — ระบบจะอัปเดต quota เป็น <strong>30 ไฟล์/วัน</strong> อัตโนมัติ</p>
+            </div>
+
+            <p style="text-align:center; margin: 24px 0;">
+                <a href="${_baseUrl()}/${locale}/account" class="btn">เปิดบัญชีของฉัน →</a>
+            </p>
+        `}
+
+        <p style="font-size:13px; color:#64748b;">หากมีคำถามตอบกลับอีเมลนี้ได้เลย หรือโทร 08 1144 2000</p>
+    `, locale);
+
+    const text = `ยืนยันการชำระเงินเรียบร้อย!
+
+แพ็กเกจ: ${planTh}
+${hasDat ? `License Key: ${license.license_key}\nใช้ได้ถึง: ${validUntil || 'ตลอดชีพ'}` : ''}
+
+ดาวน์โหลด/ใช้งาน: ${_baseUrl()}/${locale}/account`;
+
+    return _send({ to, subject: `🎉 ${planTh} พร้อมใช้งานแล้ว — CNC Costify AI`, html, text });
+}
+
 module.exports = {
     sendVerifyEmail,
     sendResetEmail,
     sendWelcomeEmail,
+    sendAdminOrderNotification,
+    sendLicenseDeliveryEmail,
     isConfigured: _isConfigured,
 };

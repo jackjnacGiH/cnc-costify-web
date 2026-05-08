@@ -14,16 +14,30 @@ export async function proxyToBackend(req: NextRequest, backendPath: string): Pro
     const cookie = req.headers.get("cookie") || "";
     const auth = req.headers.get("authorization") || "";
 
-    const body = req.method !== "GET" && req.method !== "HEAD" ? await req.text() : undefined;
     const search = req.nextUrl.search || "";
+    const contentType = req.headers.get("content-type") || "";
+    const isMultipart = /multipart\/form-data/i.test(contentType);
 
     const upstreamHeaders: Record<string, string> = {
-      "Content-Type": req.headers.get("content-type") || "application/json",
+      "Content-Type": contentType || "application/json",
       "X-Forwarded-For": ip,
       "User-Agent": ua,
       Cookie: cookie,
     };
     if (auth) upstreamHeaders.Authorization = auth;
+
+    // For multipart/form-data we need to pass the raw body bytes through
+    // (req.text() would corrupt binary file data). For everything else, text
+    // is fine and avoids the duplex-stream complications.
+    let body: BodyInit | undefined;
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      if (isMultipart) {
+        const buf = await req.arrayBuffer();
+        body = buf;
+      } else {
+        body = await req.text();
+      }
+    }
 
     const upstream = await fetch(`${BACKEND_URL}${backendPath}${search}`, {
       method: req.method,

@@ -10,6 +10,7 @@ import { AccountUsageCard } from "@/components/AccountUsageCard";
 import { AccountDevicesCard } from "@/components/AccountDevicesCard";
 import { LaunchDesktopButton } from "@/components/LaunchDesktopButton";
 import { AccountPlanCard } from "@/components/AccountPlanCard";
+import { AccountLicenseCard, AccountOrdersLink } from "@/components/AccountLicenseCard";
 import { Calendar, ArrowUp, Mail, User, Building2, Phone } from "lucide-react";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -115,11 +116,19 @@ export default async function AccountPage({ params }: Props) {
             planExpiresAt={user.plan_expires_at || null}
           />
 
+          {/* License key card — only renders if user has an active license */}
+          <AccountLicenseCard locale={locale} />
+
           {/* Today's usage */}
           <AccountUsageCard locale={locale} />
 
           {/* Connected devices */}
           <AccountDevicesCard locale={locale} />
+
+          {/* Order history link */}
+          <div className="mb-6">
+            <AccountOrdersLink locale={locale} />
+          </div>
 
           {/* Profile info */}
           <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 mb-6">
