@@ -5,6 +5,7 @@ import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { FeatureSuggestionWidget } from "@/components/FeatureSuggestionWidget";
+import { MobileActionBar } from "@/components/MobileActionBar";
 import "../globals.css";
 
 const inter = Inter({
@@ -52,6 +53,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <body className="min-h-full flex flex-col font-sans bg-slate-50 text-slate-900">
         <NextIntlClientProvider messages={messages}>
           {children}
+          <MobileActionBar />
           <FeatureSuggestionWidget />
         </NextIntlClientProvider>
       </body>

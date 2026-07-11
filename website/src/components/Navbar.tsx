@@ -3,6 +3,7 @@
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, X, User as UserIcon, LogOut, ShieldCheck } from "lucide-react";
 
 type AuthUser = {
@@ -21,6 +22,7 @@ type LocalLicense = {
 export function Navbar() {
   const t = useTranslations("Nav");
   const locale = useLocale();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<AuthUser>(null);
   const [localLicense, setLocalLicense] = useState<LocalLicense>(null);
@@ -89,6 +91,8 @@ export function Navbar() {
   ];
 
   const otherLocale = locale === "th" ? "en" : "th";
+  const isActive = (href: string) =>
+    href === `/${locale}` ? pathname === href : pathname.startsWith(href);
 
   // Initials for avatar
   const initials = (user?.name || user?.email || "?")
@@ -129,7 +133,12 @@ export function Navbar() {
               <Link
                 key={l.href}
                 href={l.href}
-                className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                aria-current={isActive(l.href) ? "page" : undefined}
+                className={`px-3 py-2 text-sm font-bold rounded-lg transition-colors ${
+                  isActive(l.href)
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-slate-600 hover:text-blue-600 hover:bg-blue-50"
+                }`}
               >
                 {l.label}
               </Link>
@@ -234,7 +243,9 @@ export function Navbar() {
           <button
             onClick={() => setOpen(!open)}
             className="md:hidden p-2 text-slate-700 hover:bg-slate-100 rounded-md"
-            aria-label="Menu"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
           >
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -242,7 +253,7 @@ export function Navbar() {
 
         {/* Mobile drawer */}
         {open && (
-          <div className="md:hidden pb-4 space-y-1 border-t border-slate-200 mt-1">
+          <div id="mobile-navigation" className="md:hidden pb-4 space-y-1 border-t border-slate-200 mt-1">
             {/* Account block when signed in */}
             {user && (
               <div className="mt-2 mb-2 mx-1 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
@@ -288,7 +299,10 @@ export function Navbar() {
                 key={l.href}
                 href={l.href}
                 onClick={() => setOpen(false)}
-                className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-blue-50 rounded-md"
+                aria-current={isActive(l.href) ? "page" : undefined}
+                className={`block px-3 py-2 text-sm font-bold rounded-md ${
+                  isActive(l.href) ? "bg-blue-50 text-blue-700" : "text-slate-700 hover:bg-blue-50"
+                }`}
               >
                 {l.label}
               </Link>

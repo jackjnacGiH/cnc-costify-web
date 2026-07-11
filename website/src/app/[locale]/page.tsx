@@ -94,6 +94,41 @@ function HomePageContent({ locale }: { locale: string }) {
             </Link>
           </div>
 
+          <div className="mx-auto mb-8 max-w-4xl rounded-2xl border border-white/80 bg-white/75 p-3 shadow-xl shadow-blue-950/5 backdrop-blur-xl md:p-4">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+              {[
+                { icon: FileBox, th: "ใส่ไฟล์ STEP / PDF", en: "Drop STEP / PDF" },
+                { icon: Brain, th: "AI อ่านแบบ", en: "AI reads drawing" },
+                { icon: Calculator, th: "คำนวณต้นทุน", en: "Calculate cost" },
+                { icon: FileSpreadsheet, th: "ส่งออกใบเสนอราคา", en: "Export quote" },
+              ].map(({ icon: Icon, th, en }, index) => (
+                <div
+                  key={en}
+                  className="relative flex min-h-20 items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3 py-3 text-left shadow-sm"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-md shadow-blue-500/20">
+                    <Icon size={18} aria-hidden="true" />
+                  </span>
+                  <span>
+                    <span className="block text-[10px] font-black uppercase tracking-widest text-blue-600">
+                      {locale === "th" ? `ขั้นที่ ${index + 1}` : `Step ${index + 1}`}
+                    </span>
+                    <span className="block text-sm font-black leading-tight text-slate-800">
+                      {locale === "th" ? th : en}
+                    </span>
+                  </span>
+                  {index < 3 && (
+                    <ArrowRight
+                      size={15}
+                      aria-hidden="true"
+                      className="absolute -right-3 top-1/2 z-10 hidden -translate-y-1/2 rounded-full bg-blue-600 p-0.5 text-white md:block"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-3 gap-4 md:gap-8 max-w-3xl mx-auto">
             {[
               { value: "100+", label: t("stats.materials") },
