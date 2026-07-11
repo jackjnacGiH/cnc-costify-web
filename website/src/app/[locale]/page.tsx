@@ -405,7 +405,7 @@ function SpotlightRow({
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
           </div>
           <div className="flex-1 text-center text-[10px] text-slate-400 font-mono tracking-tight truncate">
-            CNC Costify AI V5.1
+            CNC Costify AI V5.13
           </div>
         </div>
         {/*
@@ -421,7 +421,7 @@ function SpotlightRow({
               {badge}
             </div>
             <div className="text-slate-400 text-sm">
-              CNC Costify AI V5.1
+              CNC Costify AI V5.13
             </div>
           </div>
           {/* Image layer (covers placeholder when present) */}

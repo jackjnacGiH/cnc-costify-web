@@ -1,9 +1,19 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Upload, FileImage, AlertCircle, CheckCircle2, Loader2, Cpu } from "lucide-react";
+import { Upload, FileImage, AlertCircle, CheckCircle2, Loader2, Cpu, Sparkles } from "lucide-react";
 
 type Plan = "monthly" | "yearly" | "lifetime";
+
+type Device = {
+  id: number;
+  device_name: string | null;
+  os: string | null;
+  hardware_id: string | null;
+  last_used_at: number | null;
+  created_at: number;
+  revoked: number;
+};
 
 export function UpgradeForm({
   locale, plan, amount, userEmail,
@@ -18,9 +28,36 @@ export function UpgradeForm({
   const [paymentRef, setPaymentRef] = useState("");
   const [notes, setNotes] = useState("");
   const [hardwareId, setHardwareId] = useState("");
+  const [autoFilled, setAutoFilled] = useState<{ deviceName: string; os: string | null } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<number | null>(null);
+
+  // Auto-fill HW ID from most recently signed-in device (for yearly/lifetime only)
+  useEffect(() => {
+    if (plan !== "yearly" && plan !== "lifetime") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/account/devices", { credentials: "include", cache: "no-store" });
+        if (!r.ok) return;
+        const data = await r.json().catch(() => null);
+        if (cancelled || !data?.ok || !Array.isArray(data.devices)) return;
+        // Find most recent non-revoked device with a hardware_id
+        const candidate = (data.devices as Device[])
+          .filter((d) => !d.revoked && d.hardware_id)
+          .sort((a, b) => (b.last_used_at || b.created_at) - (a.last_used_at || a.created_at))[0];
+        if (candidate?.hardware_id) {
+          setHardwareId(candidate.hardware_id);
+          setAutoFilled({
+            deviceName: candidate.device_name || "Desktop",
+            os: candidate.os,
+          });
+        }
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, [plan]);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -170,15 +207,31 @@ export function UpgradeForm({
           <input
             type="text"
             value={hardwareId}
-            onChange={(e) => setHardwareId(e.target.value)}
+            onChange={(e) => {
+              setHardwareId(e.target.value);
+              if (autoFilled) setAutoFilled(null);
+            }}
             placeholder="sha256:abcdef..."
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              autoFilled ? "border-emerald-300 bg-emerald-50/50" : "border-slate-300"
+            }`}
           />
-          <p className="text-xs text-slate-500 mt-1.5">
-            {locale === "th"
-              ? <>💡 หา Hardware ID ได้ที่ Desktop App → แท็บ <strong>"สิทธิ์การใช้งาน"</strong> → กดปุ่ม <strong>"คัดลอก"</strong> ข้าง Hardware ID</>
-              : <>💡 Find your Hardware ID in Desktop App → <strong>License</strong> tab → click <strong>Copy</strong> next to Hardware ID</>}
-          </p>
+          {autoFilled ? (
+            <div className="mt-1.5 flex items-start gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md px-2 py-1.5">
+              <Sparkles size={14} className="flex-shrink-0 mt-0.5" />
+              <span>
+                {locale === "th"
+                  ? <>กรอกอัตโนมัติจากเครื่องที่ Sign in ล่าสุด: <strong>{autoFilled.deviceName}</strong>{autoFilled.os ? ` (${autoFilled.os})` : ""} — แก้ไขได้ถ้าต้องการใช้กับเครื่องอื่น</>
+                  : <>Auto-filled from your last signed-in device: <strong>{autoFilled.deviceName}</strong>{autoFilled.os ? ` (${autoFilled.os})` : ""} — edit if you want to bind a different device</>}
+              </span>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 mt-1.5">
+              {locale === "th"
+                ? <>💡 หา Hardware ID ได้ที่ Desktop App → แท็บ <strong>"สิทธิ์การใช้งาน"</strong> → กดปุ่ม <strong>"คัดลอก"</strong> ข้าง Hardware ID</>
+                : <>💡 Find your Hardware ID in Desktop App → <strong>License</strong> tab → click <strong>Copy</strong> next to Hardware ID</>}
+            </p>
+          )}
         </div>
       )}
 
