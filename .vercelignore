@@ -1,0 +1,5 @@
+*
+!website
+!website/**
+website/.next
+website/node_modules

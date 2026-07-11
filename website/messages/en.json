@@ -1,7 +1,7 @@
 {
   "Brand": {
     "name": "CNC Costify AI",
-    "version": "V5.0",
+    "version": "V5.13",
     "tagline": "Calculate CNC pricing with AI in 5 seconds"
   },
   "Nav": {
@@ -17,7 +17,7 @@
     "tryFree": "Try Free"
   },
   "Hero": {
-    "badge": "🎉 V5.0 Launch — 50% off all plans",
+    "badge": "🎉 Launch Promotion — 50-70% off all plans",
     "headline": "Calculate CNC pricing with AI",
     "headlineHighlight": "in 5 seconds",
     "subheadline": "Auto-analyze STEP / PDF / JPG drawings with AI, 100+ material database, and instant Excel export",
