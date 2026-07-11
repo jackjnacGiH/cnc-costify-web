@@ -58,43 +58,124 @@ function HomePageContent({ locale }: { locale: string }) {
       <Navbar />
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-slate-50 pt-16 pb-24 md:pt-24 md:pb-32">
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-violet-950 py-14 text-white md:py-20">
         <div className="absolute inset-0 bg-grid-slate opacity-50" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-br from-blue-400/20 via-purple-400/10 to-transparent blur-3xl rounded-full" />
+        <div className="absolute -left-24 top-0 h-96 w-96 rounded-full bg-blue-500/25 blur-3xl" />
+        <div className="absolute -right-20 bottom-0 h-96 w-96 rounded-full bg-fuchsia-500/20 blur-3xl" />
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-blue-100 to-purple-100 border border-blue-200 rounded-full text-sm font-bold text-blue-800 mb-8 animate-fade-in-up">
-            <Sparkles size={16} className="text-purple-600" />
-            {t("badge")}
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+            <div className="text-center lg:text-left">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-300/25 bg-white/10 px-4 py-1.5 text-sm font-bold text-blue-100 backdrop-blur animate-fade-in-up">
+                <Sparkles size={16} className="text-fuchsia-300" />
+                {t("badge")}
+              </div>
+
+              <h1 className="mb-6 text-4xl font-black leading-[1.05] tracking-tight md:text-6xl lg:text-7xl animate-fade-in-up">
+                {t("headline")}
+                <span className="mt-2 block bg-gradient-to-r from-cyan-300 via-blue-300 to-fuchsia-300 bg-clip-text text-transparent">
+                  {t("headlineHighlight")}
+                </span>
+              </h1>
+
+              <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-slate-300 md:text-xl lg:mx-0 animate-fade-in-up">
+                {t("subheadline")}
+              </p>
+
+              <div className="mb-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start animate-fade-in-up">
+                <Link
+                  href={`/${locale}/signup`}
+                  className="group flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-violet-500 px-7 py-4 text-lg font-black text-white shadow-2xl shadow-blue-500/30 transition hover:-translate-y-0.5 hover:brightness-110"
+                >
+                  {t("ctaPrimary")}
+                  <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" />
+                </Link>
+                <Link
+                  href={`/${locale}/download`}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-7 py-4 text-lg font-bold text-white backdrop-blur transition hover:bg-white/15"
+                >
+                  {locale === "th" ? "ดาวน์โหลด V5.13" : "Download V5.13"}
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm font-semibold text-slate-300 lg:justify-start">
+                {[locale === "th" ? "ทดลองใช้ฟรี 3 ไฟล์/วัน" : "3 free files/day", locale === "th" ? "ไม่ผูกบัตรเครดิต" : "No credit card", "Windows 10 / 11"].map((item) => (
+                  <span key={item} className="inline-flex items-center gap-1.5">
+                    <CheckCircle2 size={16} className="text-emerald-400" aria-hidden="true" />
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative mx-auto w-full max-w-2xl lg:mx-0">
+              <div className="absolute -inset-6 rounded-[2rem] bg-gradient-to-r from-blue-500/25 to-fuchsia-500/20 blur-2xl" />
+              <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-slate-900/80 shadow-2xl shadow-black/40 backdrop-blur-xl">
+                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-400">CNC Costify AI · LIVE QUOTE</span>
+                  <span className="rounded-full bg-emerald-400/15 px-2 py-1 text-[10px] font-black text-emerald-300">
+                    {locale === "th" ? "พร้อมใช้งาน" : "READY"}
+                  </span>
+                </div>
+
+                <div className="grid md:grid-cols-[0.9fr_1.1fr]">
+                  <div className="border-b border-white/10 bg-gradient-to-br from-blue-500/10 to-transparent p-5 md:border-b-0 md:border-r">
+                    <div className="mb-4 flex items-center justify-between">
+                      <span className="text-xs font-black uppercase tracking-widest text-blue-300">STEP MODEL</span>
+                      <span className="rounded-md bg-blue-400/15 px-2 py-1 text-[10px] text-blue-200">A6061</span>
+                    </div>
+                    <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl border border-blue-300/15 bg-slate-950/50">
+                      <div className="absolute inset-0 bg-grid-slate opacity-30" />
+                      <div className="relative h-28 w-40 -skew-y-6 rounded-lg border border-cyan-300/70 bg-gradient-to-br from-blue-400/35 to-violet-500/10 shadow-[0_0_45px_rgba(56,189,248,0.25)]">
+                        <div className="absolute left-5 top-5 h-9 w-9 rounded-full border-2 border-cyan-200/70 bg-slate-950/70" />
+                        <div className="absolute bottom-4 right-5 h-5 w-16 rounded border border-violet-300/60" />
+                      </div>
+                    </div>
+                    <p className="mt-3 truncate text-xs font-bold text-slate-300">AL_Base_1.step</p>
+                    <p className="mt-1 text-[11px] text-slate-500">300 × 920 × 25 mm · 18.63 kg</p>
+                  </div>
+
+                  <div className="p-5 text-left">
+                    <div className="mb-4 flex items-center justify-between">
+                      <span className="text-xs font-black uppercase tracking-widest text-fuchsia-300">
+                        {locale === "th" ? "ผลคำนวณอัตโนมัติ" : "AUTO COST RESULT"}
+                      </span>
+                      <Zap size={17} className="text-amber-300" aria-hidden="true" />
+                    </div>
+                    <div className="space-y-2.5 text-sm">
+                      {[
+                        [locale === "th" ? "ค่าวัสดุ" : "Material", "฿4,660"],
+                        [locale === "th" ? "งานชุบผิว" : "Coating", "฿3,330"],
+                        [locale === "th" ? "กระบวนการ CNC" : "CNC process", "฿7,600"],
+                        [locale === "th" ? "ค่า Setup" : "Setup", "฿350"],
+                      ].map(([label, value]) => (
+                        <div key={label} className="flex items-center justify-between border-b border-white/5 pb-2.5">
+                          <span className="text-slate-400">{label}</span>
+                          <span className="font-bold text-slate-200">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-5 rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-4">
+                      <p className="text-xs font-bold text-emerald-300">{locale === "th" ? "ราคาต่อชิ้น" : "PRICE / PART"}</p>
+                      <p className="mt-1 text-3xl font-black text-white">฿16,725</p>
+                      <p className="mt-1 text-xs text-emerald-200/70">10 pcs · Total ฿167,250</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute -bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-white/15 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-200 shadow-xl">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                {locale === "th" ? "จากไฟล์สู่ราคาพร้อมเสนอในไม่กี่วินาที" : "From file to quote-ready cost in seconds"}
+              </div>
+            </div>
           </div>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 mb-6 animate-fade-in-up">
-            {t("headline")}
-            <br />
-            <span className="gradient-text">{t("headlineHighlight")}</span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto mb-10 animate-fade-in-up">
-            {t("subheadline")}
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-fade-in-up">
-            <Link
-              href={`/${locale}/signup`}
-              className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg font-bold rounded-xl shadow-xl shadow-blue-500/30 hover:shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-2 glow-blue"
-            >
-              {t("ctaPrimary")}
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link
-              href={`/${locale}/pricing`}
-              className="px-8 py-4 bg-white hover:bg-slate-50 text-slate-900 text-lg font-bold rounded-xl border-2 border-slate-300 hover:border-blue-500 hover:text-blue-600 transition-all"
-            >
-              {t("ctaSecondary")}
-            </Link>
-          </div>
-
-          <div className="mx-auto mb-8 max-w-4xl rounded-2xl border border-white/80 bg-white/75 p-3 shadow-xl shadow-blue-950/5 backdrop-blur-xl md:p-4">
+          <div className="mx-auto mt-16 max-w-5xl rounded-2xl border border-white/10 bg-white/5 p-3 shadow-xl backdrop-blur-xl md:p-4">
             <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
               {[
                 { icon: FileBox, th: "ใส่ไฟล์ STEP / PDF", en: "Drop STEP / PDF" },
@@ -104,7 +185,7 @@ function HomePageContent({ locale }: { locale: string }) {
               ].map(({ icon: Icon, th, en }, index) => (
                 <div
                   key={en}
-                  className="relative flex min-h-20 items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3 py-3 text-left shadow-sm"
+                  className="relative flex min-h-20 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-left"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-md shadow-blue-500/20">
                     <Icon size={18} aria-hidden="true" />
@@ -113,7 +194,7 @@ function HomePageContent({ locale }: { locale: string }) {
                     <span className="block text-[10px] font-black uppercase tracking-widest text-blue-600">
                       {locale === "th" ? `ขั้นที่ ${index + 1}` : `Step ${index + 1}`}
                     </span>
-                    <span className="block text-sm font-black leading-tight text-slate-800">
+                    <span className="block text-sm font-black leading-tight text-white">
                       {locale === "th" ? th : en}
                     </span>
                   </span>
@@ -129,15 +210,15 @@ function HomePageContent({ locale }: { locale: string }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 md:gap-8 max-w-3xl mx-auto">
+          <div className="mx-auto mt-5 grid max-w-3xl grid-cols-3 gap-3 md:gap-5">
             {[
               { value: "100+", label: t("stats.materials") },
               { value: t("stats.speedValue"), label: t("stats.speed") },
               { value: "13", label: locale === "th" ? "ฟีเจอร์ AI" : "AI Features" },
             ].map((s, i) => (
-              <div key={i} className="bg-white/70 backdrop-blur border border-slate-200 rounded-xl p-4 md:p-6 shadow-sm">
-                <div className="text-3xl md:text-4xl font-black gradient-text">{s.value}</div>
-                <div className="text-xs md:text-sm text-slate-600 mt-1">{s.label}</div>
+              <div key={i} className="rounded-xl border border-white/10 bg-white/5 p-3 text-center backdrop-blur md:p-4">
+                <div className="text-2xl font-black text-white md:text-3xl">{s.value}</div>
+                <div className="mt-1 text-xs text-slate-400 md:text-sm">{s.label}</div>
               </div>
             ))}
           </div>
