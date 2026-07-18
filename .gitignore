@@ -47,3 +47,10 @@ Thumbs.db
 # We are keeping custom spec files, so commenting this out or being specific
 # *.spec
 users.db 
+
+# Security: never publish credentials, signing material, issued licenses, or runtime data.
+api_config.json
+*_private_key.pem
+admin/*.dat
+setup_phase_a.py
+website/data/
