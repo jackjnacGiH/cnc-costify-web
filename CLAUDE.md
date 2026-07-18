@@ -22,7 +22,7 @@ parts in seconds instead of hours, by combining:
 
 **Company:** บริษัท เจ แนค (ประเทศไทย) จำกัด — J Nac (Thailand) Co., Ltd.
 
-**Current version:** V5.13 (see Version History section)
+**Current version:** V5.14 (see Version History section)
 
 ---
 
@@ -116,7 +116,7 @@ parts in seconds instead of hours, by combining:
 ### Build / Deploy
 | File | Purpose |
 |---|---|
-| `package.json` | npm scripts + electron-builder config (V5.13) |
+| `package.json` | npm scripts + electron-builder config (V5.14) |
 | `build/installer.nsh` | NSIS installer customization |
 | `deploy/` | VPS systemd/PM2/Nginx templates |
 
@@ -139,7 +139,8 @@ parts in seconds instead of hours, by combining:
 | V5.10 | GPT/OpenAI support + expanded OpenRouter model list (bring-your-own-key for all plans) |
 | V5.11 | Parallel batch processing (concurrency=3) + per-file elapsed timer + faster default models |
 | V5.12 | Quick Wins: file hash cache (LRU 100) + image resize (max 2048px) + connection pre-warm + ETA timer |
-| V5.13 | **Current** — Fix: PDF/JPG blank screen — pin Babel JSX to classic runtime (`data-presets="react-classic"`) so the unpinned `@babel/standalone` CDN flipping to the automatic runtime no longer emits an illegal `import` that blanks `/aey` |
+| V5.13 | Fix: PDF/JPG blank screen — pin Babel JSX to classic runtime (`data-presets="react-classic"`) so the unpinned `@babel/standalone` CDN flipping to the automatic runtime no longer emits an illegal `import` that blanks `/aey` |
+| V5.14 | **Current** — Security: revoke exposed `admin-key-2025` verification while preserving all production licenses issued with `admin-key-2026` |
 
 ---
 

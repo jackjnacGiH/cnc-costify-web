@@ -5,20 +5,11 @@ const { spawnSync } = require('child_process');
 
 // Public key PEM for Ed25519 signature verification.
 // Phase A: production keypair — private key lives on VPS as LICENSE_PRIVATE_KEY.
-// Legacy key kept for backward compatibility with test licenses signed pre-Phase-A.
+// admin-key-2025 is intentionally revoked because its private key was exposed.
 const ADMIN_PUBKEY_ID = 'admin-key-2026';
 const ADMIN_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEAFOy+bKqUgQpCuRfWMCebgJMeGsqsxh9DVPnjrKSRTz4=
 -----END PUBLIC KEY-----`;
-// Older licenses signed with the prior placeholder key still validate.
-const LEGACY_KEYS = [
-    {
-        id: 'admin-key-2025',
-        pem: `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAOCEL276y/rY0gTmC+brztVNhCTbi+WF9WnDAlCLbjmM=
------END PUBLIC KEY-----`,
-    },
-];
 
 // Utility: canonical JSON with sorted keys (stable, no spaces)
 function canonicalize(obj) {
@@ -68,9 +59,7 @@ function parseBase64(input) {
 }
 
 function _resolveKey(pubkeyId) {
-    if (pubkeyId === ADMIN_PUBKEY_ID) return ADMIN_PUBLIC_KEY_PEM;
-    const legacy = LEGACY_KEYS.find((k) => k.id === pubkeyId);
-    return legacy ? legacy.pem : null;
+  return pubkeyId === ADMIN_PUBKEY_ID ? ADMIN_PUBLIC_KEY_PEM : null;
 }
 
 function verifySignature(payload, signatureB64, pubkeyId, sigAlg) {

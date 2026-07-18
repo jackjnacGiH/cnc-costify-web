@@ -22,7 +22,7 @@ const sarabun = Sarabun({
 });
 
 export const metadata: Metadata = {
-  title: "CNC Costify AI V5.13 — คำนวณราคา CNC ด้วย AI ใน 5 วินาที",
+  title: "CNC Costify AI V5.14 — คำนวณราคา CNC ด้วย AI ใน 5 วินาที",
   description: "วิเคราะห์ไฟล์ STEP / PDF / JPG อัตโนมัติด้วย AI พร้อมฐานข้อมูลวัสดุ 100+ รายการ บันทึกผลลัพธ์ลง Excel ได้ทันที",
   keywords: ["CNC", "ราคา CNC", "AI", "STEP file", "Cost calculator", "Costify", "CNC ไทย"],
   metadataBase: new URL("https://www.cnccostify.cloud"),

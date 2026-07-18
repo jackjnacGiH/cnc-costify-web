@@ -1,6 +1,8 @@
 !macro customInit
   DetailPrint "Stopping CNC Costify AI if running..."
   ; Kill all known versions
+  nsExec::ExecToStack 'taskkill /IM "CNC Costify AI V5.14.exe" /F /T'
+  Pop $0
   nsExec::ExecToStack 'taskkill /IM "CNC Costify AI V5.13.exe" /F /T'
   Pop $0
   nsExec::ExecToStack 'taskkill /IM "CNC Costify AI V5.0.exe" /F /T'
@@ -49,7 +51,9 @@
 !macroend
 
 !macro customUnInstall
-  DetailPrint "Stopping CNC Costify AI V5.13 if running..."
+  DetailPrint "Stopping CNC Costify AI V5.14 if running..."
+  nsExec::ExecToStack 'taskkill /IM "CNC Costify AI V5.14.exe" /F /T'
+  Pop $0
   nsExec::ExecToStack 'taskkill /IM "CNC Costify AI V5.13.exe" /F /T'
   Pop $0
   nsExec::ExecToStack 'taskkill /IM "CNC Costify AI V5.0.exe" /F /T'

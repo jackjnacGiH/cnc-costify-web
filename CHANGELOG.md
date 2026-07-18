@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [5.14.0] - 2026-07-18
+
+- **Security:** Revoke `admin-key-2025` verification after its private signing key was exposed in public Git history.
+- **Compatibility:** Keep `admin-key-2026` unchanged; all licenses currently issued in production use this key.
+- **Repository hygiene:** Exclude private provisioning scripts, local license files, API config, and runtime databases from published source snapshots.
+
 ## [5.13.0] - 2026-06-17
 
 - **PDF/JPG stability:** Pin Babel JSX to the classic React runtime so `/aey` no longer becomes blank when the unpinned Babel CDN changes its default runtime.

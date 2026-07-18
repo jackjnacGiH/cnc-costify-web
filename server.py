@@ -40,7 +40,7 @@ root_logger.addHandler(stream_handler)
 
 logging.info("Backend Server Started")
 logging.info(f"Python Version: {sys.version}")
-logging.info(f"Server Script Version: 5.13.0")
+logging.info(f"Server Script Version: 5.14.0")
 
 # Fix OCC Environment Variables (Critical for OneFile)
 if getattr(sys, 'frozen', False):

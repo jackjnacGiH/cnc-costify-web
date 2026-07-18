@@ -1,7 +1,7 @@
 {
   "name": "cnc-costify-ai-v5",
-  "version": "5.13.0",
-  "description": "CNC Costify AI V5.13 - Fix: PDF/JPG blank screen (pin Babel JSX classic runtime against unpinned CDN drift)",
+  "version": "5.14.0",
+  "description": "CNC Costify AI V5.14 - Fix: PDF/JPG blank screen (pin Babel JSX classic runtime against unpinned CDN drift)",
   "main": "electron/main.js",
   "scripts": {
     "start": "node server.js",
@@ -19,7 +19,7 @@
     "backend:build:onefile": "node -e \"var p=process.env.OCC_PYTHON||'python';require('child_process').execSync(p+' -m PyInstaller -y CNC-Costify-AI.onefile.spec --distpath dist --workpath build/CNC-Costify-AI --clean',{stdio:'inherit'})\"",
     "build:v32": "npm run backend:build:onefile && npm run dist:win && npm run verify:v32 && npm run open:v32",
     "build:oneclick": "npm run build:v32",
-    "verify:v32": "node -e \"const fs=require('fs');const p='release_v5/CNC Costify AI V5.13 Setup.exe';if(fs.existsSync(p)){console.log('Build OK: '+p);}else{console.error('Build failed: '+p+' not found');process.exit(1);}\"",
+    "verify:v32": "node -e \"const fs=require('fs');const p='release_v5/CNC Costify AI V5.14 Setup.exe';if(fs.existsSync(p)){console.log('Build OK: '+p);}else{console.error('Build failed: '+p+' not found');process.exit(1);}\"",
     "verify:release": "npm run verify:v32",
     "open:v32": "explorer release_v5",
     "open:release": "npm run open:v32",
@@ -57,8 +57,8 @@
   },
   "build": {
     "appId": "com.cnc.costify.ai.v5",
-    "productName": "CNC Costify AI V5.13",
-    "artifactName": "CNC Costify AI V5.13 Setup.exe",
+    "productName": "CNC Costify AI V5.14",
+    "artifactName": "CNC Costify AI V5.14 Setup.exe",
     "directories": {
       "output": "release_v5"
     },
@@ -146,7 +146,7 @@
       "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "CNC Costify AI V5.13",
+      "shortcutName": "CNC Costify AI V5.14",
       "perMachine": true,
       "runAfterFinish": true,
       "include": "build/installer.nsh"

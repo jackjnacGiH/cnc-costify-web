@@ -400,7 +400,7 @@ export default async function DocsPage({ params }: Props) {
                         { q: "ข้อมูลของฉันส่งไปไหนบ้าง?", a: "ไฟล์ STEP / PDF / JPG ไม่ออกจากเครื่องคุณ — เฉพาะ Prompt ที่ส่งให้ AI วิเคราะห์เท่านั้นที่เดินทางไป Cloud" },
                         { q: "ย้ายเครื่องได้ไหม?", a: "Yearly / Lifetime ผูกกับ Hardware ID หากต้องการย้าย ติดต่อ info@cnccostify.cloud เพื่อขอ re-issue license" },
                         { q: "ใช้งานร่วมกับเครื่องอื่นได้ไหม?", a: "1 License = 1 เครื่อง หากต้องการหลายเครื่อง ซื้อเพิ่มหรือสมัครแพ็กเกจ Team (ติดต่อเรา)" },
-                        { q: "อัปเดตฟรีไหม?", a: "Free สำหรับ Minor updates ภายในเวอร์ชันใหญ่เดียวกัน (เช่น V5.0 → V5.13) — Major version ใหม่อาจมีค่าใช้จ่าย" },
+                        { q: "อัปเดตฟรีไหม?", a: "Free สำหรับ Minor updates ภายในเวอร์ชันใหญ่เดียวกัน (เช่น V5.0 → V5.14) — Major version ใหม่อาจมีค่าใช้จ่าย" },
                         { q: "ยกเลิกแพ็กเกจได้ไหม?", a: "Monthly ยกเลิกได้ทุกเดือน — Yearly และ Lifetime ไม่มีการคืนเงินแต่ใช้งานจนหมดอายุได้" },
                         { q: "ใช้งาน Mac / Linux ได้ไหม?", a: "ปัจจุบันรองรับเฉพาะ Windows 10/11 64-bit — เวอร์ชัน Mac กำลังพิจารณาตาม Demand" },
                       ]
@@ -408,7 +408,7 @@ export default async function DocsPage({ params }: Props) {
                         { q: "Where does my data go?", a: "STEP/PDF/JPG files stay on your machine — only the prompt text sent to AI for analysis travels to the cloud" },
                         { q: "Can I move machines?", a: "Yearly/Lifetime are bound to Hardware ID. To move, contact info@cnccostify.cloud to re-issue the license" },
                         { q: "Can I share with another machine?", a: "1 License = 1 machine. For multiple machines, buy additional licenses or contact us for a Team plan" },
-                        { q: "Are updates free?", a: "Free for minor updates within the same major version (e.g., V5.0 → V5.13). New major versions may incur a fee" },
+                        { q: "Are updates free?", a: "Free for minor updates within the same major version (e.g., V5.0 → V5.14). New major versions may incur a fee" },
                         { q: "Can I cancel?", a: "Monthly: cancel any month. Yearly/Lifetime: no refunds but usable until expiry" },
                         { q: "Mac / Linux support?", a: "Currently Windows 10/11 64-bit only — Mac version being considered based on demand" },
                       ]

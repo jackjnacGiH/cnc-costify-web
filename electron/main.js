@@ -32,7 +32,7 @@ function createWindow() {
     minHeight: 640,
     useContentSize: true,  // dimensions refer to web content area, not OS chrome
     icon: nativeImage.createFromPath(iconPath),
-    title: 'CNC Costify AI V5.13',
+    title: 'CNC Costify AI V5.14',
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')
@@ -93,7 +93,7 @@ function createActivationWindow() {
     resizable: true,
     alwaysOnTop: false,
     icon: nativeImage.createFromPath(iconPath),
-    title: 'Activation – CNC Costify AI V5.13',
+    title: 'Activation – CNC Costify AI V5.14',
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js')

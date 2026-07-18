@@ -34,7 +34,7 @@ export default async function DownloadPage({ params }: Props) {
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="flex-1 min-w-[260px]">
                 <h3 className="font-black text-lg text-slate-900 mb-1">
-                  {locale === "th" ? "CNC Costify AI V5.13 — Windows" : "CNC Costify AI V5.13 — Windows"}
+                  {locale === "th" ? "CNC Costify AI V5.14 — Windows" : "CNC Costify AI V5.14 — Windows"}
                 </h3>
                 <p className="text-sm text-slate-600 mb-3">
                   {locale === "th"
@@ -48,12 +48,12 @@ export default async function DownloadPage({ params }: Props) {
                 </ul>
               </div>
               <a
-                href="https://api.cnccostify.cloud/downloads/CNC-Costify-AI-V5.13-Setup.exe"
+                href="https://api.cnccostify.cloud/downloads/CNC-Costify-AI-V5.14-Setup.exe"
                 download
                 className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-105 transition-all"
               >
                 <Download size={18} />
-                {locale === "th" ? "ดาวน์โหลด V5.13" : "Download V5.13"}
+                {locale === "th" ? "ดาวน์โหลด V5.14" : "Download V5.14"}
               </a>
             </div>
           </div>
@@ -66,7 +66,7 @@ export default async function DownloadPage({ params }: Props) {
             <ol className="space-y-3 text-sm">
               <li className="flex gap-3">
                 <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-xs">1</span>
-                <span>{locale === "th" ? "ดาวน์โหลด + ติดตั้ง CNC Costify AI V5.13" : "Download + install CNC Costify AI V5.13"}</span>
+                <span>{locale === "th" ? "ดาวน์โหลด + ติดตั้ง CNC Costify AI V5.14" : "Download + install CNC Costify AI V5.14"}</span>
               </li>
               <li className="flex gap-3">
                 <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold text-xs">2</span>

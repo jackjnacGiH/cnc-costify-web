@@ -92,7 +92,7 @@ function HomePageContent({ locale }: { locale: string }) {
                   href={`/${locale}/download`}
                   className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-7 py-4 text-lg font-bold text-slate-800 shadow-sm transition hover:border-blue-400 hover:text-blue-700 hover:shadow-md"
                 >
-                  {locale === "th" ? "ดาวน์โหลด V5.13" : "Download V5.13"}
+                  {locale === "th" ? "ดาวน์โหลด V5.14" : "Download V5.14"}
                 </Link>
               </div>
 
@@ -519,7 +519,7 @@ function SpotlightRow({
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
           </div>
           <div className="flex-1 text-center text-[10px] text-slate-400 font-mono tracking-tight truncate">
-            CNC Costify AI V5.13
+            CNC Costify AI V5.14
           </div>
         </div>
         {/*
@@ -535,7 +535,7 @@ function SpotlightRow({
               {badge}
             </div>
             <div className="text-slate-400 text-sm">
-              CNC Costify AI V5.13
+              CNC Costify AI V5.14
             </div>
           </div>
           {/* Image layer (covers placeholder when present) */}

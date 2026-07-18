@@ -3,6 +3,7 @@ $ErrorActionPreference = "SilentlyContinue"
 # Stop common processes that may lock Electron builder outputs
 $names = @(
   "CNC Costify AI",
+  "CNC Costify AI V5.14",
   "CNC Costify AI V5.13",
   "CNC Costify AI 2026",
   "CNC Costify AI Admin",
