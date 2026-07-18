@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF/JPG Costify - Analysis - www.cnccostify.cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React 18 + ReactDOM: UMD from unpkg (no CORS, no module issues) -->
+    <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script>
+        // Wire globals — icons are defined inline (no CDN dependency)
+        window.useState    = React.useState;
+        window.useEffect   = React.useEffect;
+        window.useRef      = React.useRef;
+        window.useCallback = React.useCallback;
+        window.Fragment    = React.Fragment;
+        window.createRoot  = ReactDOM.createRoot;
+        window.depsLoaded  = true;
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+        // Pin JSX to the *classic* runtime (React.createElement). Newer
+        // @babel/standalone builds default preset-react to the *automatic*
+        // runtime, which injects `import { jsx } from "react/jsx-runtime"` at
+        // the top of the output — an ESM import that is illegal inside a classic
+        // <script> and aborts the ENTIRE babel block before renderApp() runs,
+        // leaving #root empty (= blank PDF/JPG page). The unpinned CDN URL above
+        // means that default can flip under us, so we register an explicit
+        // classic-runtime preset and point the babel block at it below. This is
+        // version-proof regardless of which @babel/standalone unpkg serves.
+        if (window.Babel && Babel.registerPreset && !Babel.availablePresets['react-classic']) {
+            Babel.registerPreset('react-classic', {
+                presets: [[Babel.availablePresets['react'], { runtime: 'classic' }]]
+            });
+        }
+    </script>
+    <style>
+        /* Match main app font scale (+2 levels) */
+        html { font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Sync UI zoom from parent window's localStorage (set in main app navbar) -->
+    <script>
+        (function syncUiZoom() {
+            try {
+                const saved = parseFloat(localStorage.getItem('uiZoomScale')) || 1.0;
+                if (saved !== 1.0) {
+                    if (window.cncZoom && typeof window.cncZoom.set === 'function') {
+                        window.cncZoom.set(saved);
+                    } else {
+                        document.body.style.zoom = saved;
+                    }
+                }
+                // Listen for storage changes from parent (so zoom updates live)
+                window.addEventListener('storage', (e) => {
+                    if (e.key !== 'uiZoomScale') return;
+                    const v = parseFloat(e.newValue) || 1.0;
+                    if (window.cncZoom && typeof window.cncZoom.set === 'function') {
+                        window.cncZoom.set(v);
+                    } else {
+                        document.body.style.zoom = v;
+                    }
+                });
+            } catch (_) { /* ignore */ }
+        })();
+    </script>
+
+    <script type="text/babel" data-presets="react-classic">
+        const checkDeps = setInterval(() => {
+            if (window.depsLoaded) { clearInterval(checkDeps); renderApp(); }
+        }, 50);
+
+        function renderApp() {
+            const { React, useState, useEffect, useRef, useCallback, Fragment, createRoot } = window;
+
+            // ─── Inline SVG icon set (no CDN — zero CORS risk) ─────────────────
+            const _Ico = ({className='', width=24, height=24, strokeWidth=2, style, d}) => (
+                <svg className={className} style={style} width={width} height={height}
+                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" strokeWidth={strokeWidth}
+                    strokeLinecap="round" strokeLinejoin="round"
+                    dangerouslySetInnerHTML={{__html: d}} />
+            );
+            const _mk = d => p => <_Ico {...p} d={d} />;
+
+            const Upload       = _mk('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>');
+            const FileText     = _mk('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>');
+            const Download     = _mk('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>');
+            const Loader2      = _mk('<path d="M21 12a9 9 0 1 1-6.219-8.56"/>');
+            const Calculator   = _mk('<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="10" x2="16" y2="14"/><line x1="8" y1="10" x2="12" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/>');
+            const Settings     = _mk('<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>');
+            const AlertCircle  = _mk('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>');
+            const CheckCircle2 = _mk('<path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/>');
+            const Trash2       = _mk('<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>');
+            const FileSearch   = _mk('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="11.5" cy="14.5" r="2.5"/><polyline points="13.25 16.25 15 18"/>');
+            const BarChart3    = _mk('<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>');
+            const Maximize2    = _mk('<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>');
+            const RefreshCw    = _mk('<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>');
+            const ChevronDown  = _mk('<path d="m6 9 6 6 6-6"/>');
+
+            // ─── helpers (mirrors main CNC_Costify_AI_V6 logic exactly) ───────
+
+            // Default cutting groups (fallback when localStorage is empty)
+            const DEFAULT_CUTTING_GROUPS = [
+                { id: 'easy',          label: 'Easy Cut',        multiplier: 3.7, materials: ['A5083','A6061','ACRYLIC','BRASS','COPPER','EPOXY','NYLON','POM'] },
+                { id: 'medium',        label: 'Medium',          multiplier: 4.2, materials: ['A7075','Bakelite','S45C','S45C (F/S)','S50C','S50C (F/S)','SS400','SS400 (F/S)','SUS303','SUS304','SUS316'] },
+                { id: 'hard',          label: 'Quite Hard',      multiplier: 5.2, materials: ['CDM','FR-4','G10 ESD','P20','SCM21','SCM415','SCM440','SCM440H','SNCM21','SUJ2'] },
+                { id: 'veryHard',      label: 'Hard',            multiplier: 6.0, materials: ['DC53','FR-5','G11','RICOCEL 301F','SKD11','SKD61','STAVAX'] },
+                { id: 'extremelyHard', label: 'Extremely Hard',  multiplier: 6.8, materials: ['CARBIDE','HRC เหล็กชุบแข็ง','TITANIUM'] },
+            ];
+
+            function loadMaterialData() {
+                try {
+                    const raw       = JSON.parse(localStorage.getItem('materialGroups') || '[]');
+                    const groups    = raw.length > 0 ? raw : DEFAULT_CUTTING_GROUPS;
+                    const densities = JSON.parse(localStorage.getItem('materialDensities') || '{}');
+                    const prices    = JSON.parse(localStorage.getItem('materialPrices')    || '{}');
+                    const allNames  = [];
+                    groups.forEach(g => g.materials && g.materials.forEach(m => { if (!allNames.includes(m)) allNames.push(m); }));
+                    Object.keys(densities).forEach(m => { if (!allNames.includes(m)) allNames.push(m); });
+                    // Starting prices (same key as main app)
+                    const spRaw = JSON.parse(localStorage.getItem('startPrices') || '{}');
+                    const startPrices = (spRaw && typeof spRaw.cnc === 'number')
+                        ? spRaw
+                        : { material: 120, coating: 200, cnc: 300, cncSetup: 0 };
+                    const cpRaw = JSON.parse(localStorage.getItem('coatingPrices') || '{}');
+                    const coatingPrices = Object.keys(cpRaw).length > 0 ? cpRaw : DEFAULT_COATING_PRICES;
+                    // V5.8: Coating list is now editable in main app (Add/Edit/Delete) — read coatingList from localStorage
+                    // so PDF/JPG dropdown stays in sync. Falls back to BASE_COATING_OPTIONS if user never edited.
+                    let coatingOptions;
+                    try {
+                        const clRaw = JSON.parse(localStorage.getItem('coatingList') || 'null');
+                        if (Array.isArray(clRaw) && clRaw.length > 0) {
+                            // coatingList items have shape { key, value }; convert to { key, label }
+                            coatingOptions = clRaw.map(item => ({ key: item.key, label: item.value || item.key }));
+                            // Also include any extra keys from coatingPrices that aren't in coatingList (defensive)
+                            const knownKeys = new Set(coatingOptions.map(o => o.key));
+                            Object.keys(coatingPrices).forEach(k => {
+                                if (!knownKeys.has(k)) coatingOptions.push({ key: k, label: k });
+                            });
+                        } else {
+                            // Fallback: hardcoded base + any custom keys from coatingPrices (V5.7- behavior)
+                            const customExtras = Object.keys(coatingPrices)
+                                .filter(k => !BASE_COATING_KEYS.has(k))
+                                .map(k => ({ key: k, label: k }));
+                            coatingOptions = [...BASE_COATING_OPTIONS, ...customExtras];
+                        }
+                    } catch (_) {
+                        coatingOptions = [...BASE_COATING_OPTIONS];
+                    }
+                    return { allNames: allNames.sort(), densities, prices, groups, startPrices, coatingPrices, coatingOptions };
+                } catch {
+                    return { allNames: [], densities: {}, prices: {}, groups: DEFAULT_CUTTING_GROUPS,
+                             startPrices: { material: 120, coating: 200, cnc: 300, cncSetup: 0 },
+                             coatingPrices: DEFAULT_COATING_PRICES,
+                             coatingOptions: BASE_COATING_OPTIONS };
+                }
+            }
+
+            // ── exact copy of parseStockDims from main app ──────────────────
+            function parseStockDims(input) {
+                if (!input) return [];
+                const normalized = input
+                    .replace(/[,]/g, '')
+                    .replace(/[×X*]/g, 'x')
+                    .replace(/[⌀Ø]/g, '')
+                    .replace(/mm/gi, '')
+                    .replace(/\s+/g, '');
+                return normalized.split('x').map(dim => {
+                    const clean = String(dim).replace(/[^0-9.\-]/g, '');
+                    return parseFloat(clean);
+                });
+            }
+
+            // ── price rounding — ปัดขึ้นเป็นหลักสิบที่ใกล้ที่สุดเสมอ ────────
+            // e.g. 23 → 30, 25.6 → 30, 30 → 30, 1834.21 → 1840
+            const roundUp10 = (n) => Math.ceil(n / 10) * 10;
+
+            // ── geometry helpers (exact copy from main app) ─────────────────
+            function computeCylinderVolume(dia, length) { return Math.PI * Math.pow(dia / 2, 2) * length; }
+            function computeCylinderLateralArea(dia, length) { return Math.PI * dia * length; }
+            function computeRectangleMaxFaceArea(h, w, l) {
+                const arr = [h, w, l].map(Number).sort((a, b) => a - b);
+                return arr[1] * arr[2];
+            }
+            // Total surface area (mm²) — used for coating cost (sq.inch pricing)
+            function computeTotalSurfaceAreaMM2(dims) {
+                if (dims.length === 2) { // cylinder [dia, length]
+                    const [d, l] = dims;
+                    return 2 * Math.PI * Math.pow(d / 2, 2) + Math.PI * d * l;
+                } else if (dims.length === 3) { // rectangle [h, w, l]
+                    const [h, w, l] = dims;
+                    return 2 * (h * w + h * l + w * l);
+                }
+                return 0;
+            }
+
+            // ── Coating defaults (fallback when localStorage is empty) ──────
+            const DEFAULT_COATING_PRICES = {
+                'Anodize':        { price: 3.5, unit: 'sq.inch' },
+                'Zinc Phosphate': { price: 5.0, unit: 'sq.inch' },
+                'Hard Chrome':    { price: 7.5, unit: 'sq.inch' },
+                'Flat Chrome':    { price: 6.5, unit: 'sq.inch' },
+            };
+
+            // Base coating list — mirrors coatingSelect in CNC_Costify_AI_V6 exactly
+            // key = localStorage key used in coatingPrices; label = display text
+            const BASE_COATING_OPTIONS = [
+                { key: 'Nickel',          label: 'Nickel' },
+                { key: 'Hard Chrome',     label: 'Hard Chrome' },
+                { key: 'Flat Chrome',     label: 'Flat Chrome' },
+                { key: 'Zinc Plating',    label: 'Zinc Plating' },
+                { key: 'Anodize',         label: 'Anodize' },
+                { key: 'Zinc Phosphate',  label: 'Zinc Phosphate' },
+                { key: 'Black Oxide',     label: 'Black Oxide' },
+                { key: 'Powder Coating',  label: 'Powder Coating' },
+                { key: 'Painting',        label: 'Painting' },
+                { key: 'Hardening',       label: 'ชุบแข็ง HRc' },
+                { key: 'PTFE',            label: 'PTFE (TEFLON)' },
+            ];
+            const BASE_COATING_KEYS = new Set(BASE_COATING_OPTIONS.map(o => o.key));
+
+            // ── Coating cost per piece ───────────────────────────────────────
+            function calcCoatingCostEa(coatingKey, sizeMat, material, densities, coatingPrices) {
+                if (!coatingKey || coatingKey === 'noOption') return null;
+                const setting = (coatingPrices || {})[coatingKey];
+                if (!setting || typeof setting.price !== 'number') return null;
+                const dims = parseStockDims(sizeMat);
+                if (!Array.isArray(dims) || dims.length === 0 || dims.some(d => isNaN(d) || d <= 0)) return null;
+                if (setting.unit === 'sq.inch') {
+                    const areaMM2  = computeTotalSurfaceAreaMM2(dims);
+                    const areaSqIn = areaMM2 / 645.16;
+                    return { cost: areaSqIn * setting.price, areaSqIn, unit: 'sq.inch' };
+                } else if (setting.unit === 'kg') {
+                    const density = (densities || {})[material];
+                    if (!density) return null;
+                    let volMM3 = 0;
+                    if (dims.length === 2) volMM3 = computeCylinderVolume(dims[0], dims[1]);
+                    else if (dims.length === 3) volMM3 = dims[0] * dims[1] * dims[2];
+                    const weightKg = (volMM3 / 1000) * density / 1000;
+                    return { cost: weightKg * setting.price, weightKg, unit: 'kg' };
+                }
+                return null;
+            }
+
+            // ── CNC cost per piece (PDF/JPG mode) ───────────────────────────
+            // STEP file = ground truth (exact 3D geometry measurement).
+            // AI is instructed to provide the TRUE removalRatio directly (not a conservative
+            // underestimate). No correction factor needed when the prompt is calibrated correctly.
+            //
+            // Calibration data (STEP vs PDF same parts):
+            //   Field Coil S45C:  STEP ratio=37.1%, AI est=40%  → AI accurate (+7.7%)
+            //   STAY A5083:       STEP ratio=71.75%, AI est=~70% with new prompt
+            //
+            // Formula: CNC/Ea. = (stockVol × removalRatio_AI × mult × pb) / 1000
+            //   PDF_RATIO_CORRECTION = 1.0 — no correction (AI gives accurate TRUE estimates)
+            //
+            // Returns { cost, cutVol, correctedCutVol, stockVol,
+            //           ratio, correctedRatio, multiplier, groupLabel, pb } or null
+            const PDF_RATIO_CORRECTION = 1.0;   // No correction — AI prompt calibrated for accuracy
+
+            function calcCNCCostEa(material, sizeMat, removalRatio, materialGroups, precisionBase) {
+                const ratio = (typeof removalRatio === 'number' && removalRatio > 0)
+                    ? Math.min(1, Math.max(0, removalRatio)) : null;
+                if (ratio === null) return null;
+
+                const dims = parseStockDims(sizeMat);
+                if (!Array.isArray(dims) || dims.length === 0 || dims.some(d => isNaN(d) || d <= 0)) return null;
+
+                let stockVol = 0;
+                if (dims.length === 2) {          // cylinder: Dia × Length
+                    stockVol = computeCylinderVolume(dims[0], dims[1]);
+                } else if (dims.length === 3) {   // rectangle: H × W × L
+                    stockVol = dims[0] * dims[1] * dims[2];
+                } else { return null; }
+
+                const group = (materialGroups || []).find(
+                    g => Array.isArray(g.materials) && g.materials.includes(material)
+                );
+                if (!group || typeof group.multiplier !== 'number') return null;
+
+                const pb              = (typeof precisionBase === 'number' && precisionBase > 0) ? precisionBase : 1.0;
+                const cutVol          = stockVol * ratio;                              // raw AI-estimated cut vol
+                const correctedRatio  = Math.min(0.95, ratio * PDF_RATIO_CORRECTION); // calibrated to STEP ground truth
+                const correctedCutVol = stockVol * correctedRatio;
+                const cost            = (correctedCutVol * group.multiplier * pb) / 1000;
+                return { cost, cutVol, correctedCutVol, stockVol,
+                         ratio, correctedRatio,
+                         multiplier: group.multiplier,
+                         groupLabel: group.label, pb };
+            }
+
+            // ── material cost per piece — same formula as calculateAndSetMaterialCost ──
+            // Returns { cost, weightKg, unit } or null if data missing / invalid
+            function calcMaterialCostEa(material, sizeMat, densities, prices) {
+                const priceSetting = prices[material];
+                if (!priceSetting || typeof priceSetting.price !== 'number') return null;
+
+                const dims = parseStockDims(sizeMat);
+                if (!Array.isArray(dims) || dims.length === 0 || dims.some(d => isNaN(d) || d <= 0)) return null;
+
+                const isCylinder = dims.length === 2;
+                const isRect     = dims.length === 3;
+
+                if (priceSetting.unit === 'kg') {
+                    const density = densities[material];
+                    if (density === undefined) return null;
+                    let volumeMM3 = 0;
+                    if (isCylinder) {
+                        const [dia, length] = dims;
+                        volumeMM3 = computeCylinderVolume(dia, length);
+                    } else if (isRect) {
+                        const [h, w, l] = dims;
+                        volumeMM3 = h * w * l;
+                    } else { return null; }
+                    const weightKg = (volumeMM3 / 1000) * density / 1000;
+                    return { cost: weightKg * priceSetting.price, weightKg, unit: 'kg' };
+
+                } else if (priceSetting.unit === 'mm2') {
+                    let areaMM2 = 0;
+                    if (isCylinder) {
+                        const [dia, length] = dims;
+                        areaMM2 = computeCylinderLateralArea(dia, length);
+                    } else if (isRect) {
+                        const [h, w, l] = dims;
+                        areaMM2 = computeRectangleMaxFaceArea(h, w, l);
+                    } else { return null; }
+                    return { cost: areaMM2 * priceSetting.price, areaMM2, unit: 'mm2' };
+                }
+                return null;
+            }
+
+            // ─── UI Translations (TH / EN) ──────────────────────────────────
+            const TRANSLATIONS = {
+                th: {
+                    // Navbar
+                    exportExcel: 'EXPORT EXCEL',
+                    pathNotSet: 'ยังไม่ได้ตั้งค่า path (ตั้งค่าในหน้าหลัก)',
+                    // File Queue
+                    fileQueueTitle: 'คิวไฟล์',
+                    addFiles: 'เพิ่มไฟล์แบบงาน (.pdf/รูป)',
+                    process: (n) => `ประมวลผล ${n} รายการ`,
+                    clearAll: 'เคลียร์ข้อมูลทั้งหมด',
+                    // Estimation
+                    estimationSummary: 'สรุปประมาณราคา',
+                    materialsLoaded: (n) => `${n} วัสดุ (โหลดแล้ว)`,
+                    // Table headers
+                    colPartName: 'ชื่อชิ้นงาน',
+                    colPartNoDwg: 'Part No / Dwg No',
+                    colMaterial: 'วัสดุ',
+                    colSizeMat: 'ขนาดวัสดุ (mm)',
+                    colQty: 'จำนวน',
+                    colMaterialEa: 'วัสดุ/ชิ้น (THB)',
+                    colCncEa: 'CNC/ชิ้น (THB)',
+                    colCoatingEa: 'Coating/ชิ้น',
+                    colCoatingUnit: '(THB)',
+                    colPriceEa: 'ราคา/ชิ้น (THB)',
+                    colTotal: 'รวม (THB)',
+                    grandTotal: 'ยอดรวมทั้งหมด',
+                    noResults: 'ยังไม่มีผลลัพธ์ กรุณาอัปโหลดและประมวลผลไฟล์แบบงาน',
+                    // Result row labels
+                    minPrice: (n) => `⬆ ราคาขั้นต่ำ ${n}`,
+                    calcFromArea: 'คำนวณจากพื้นที่',
+                    systemLabel: '✓ ระบบ',
+                    aiVal: '⚠ ค่า AI',
+                    formulaLabel: '✓ สูตร',
+                    noCoating: 'ไม่มี Coating',
+                    aiEstBadge: 'AI ประมาณ ✏️',
+                    aiEstTooltip: 'ค่านี้ประมาณโดย AI — โปรดตรวจสอบและแก้ไขให้ตรงกับ Stock Size จริง (เช่น จาก STEP file)',
+                    sizeMatPlaceholder: 'เช่น 100x200x50',
+                    technicalNotesLabel: 'บันทึกเทคนิค',
+                    // Status badges
+                    statusPending: 'รอประมวลผล',
+                    statusProcessing: 'กำลังวิเคราะห์',
+                    statusCompleted: 'สำเร็จ',
+                    statusError: 'เกิดข้อผิดพลาด',
+                    // Combobox
+                    searchPlaceholder: (n) => `ค้นหา... (${n})`,
+                    notFound: (q) => `ไม่พบ "${q}"`,
+                    // Export messages
+                    pathNotConfigured: 'ยังไม่ได้ตั้งค่า Excel File Path — กรุณาตั้งค่าในหน้าหลักก่อน',
+                    exportSuccess: (count, sheet) => `✅ บันทึกแล้ว ${count} รายการ → Sheet "${sheet}"`,
+                    exportFileBusy: '❌ ไฟล์ Excel กำลังเปิดอยู่ กรุณาปิดไฟล์ก่อนแล้วลองใหม่อีกครั้ง',
+                    exportError: (msg) => `❌ ${msg}`,
+                    exportConnectError: (msg) => `❌ ไม่สามารถเชื่อมต่อ server: ${msg}`,
+                    fileTypeError: (files) => `ไม่รองรับไฟล์ประเภทนี้:\n${files}\n\nรองรับเฉพาะ: PDF, JPG, PNG, GIF, WEBP, BMP`,
+                    // Precision Base options
+                    pbStandard: '×1.0 (มาตรฐาน)',
+                    pbFine:     '×1.2 (ละเอียด)',
+                    pbPrecision:'×1.5 (แม่นยำ)',
+                    pbHigh:     '×1.8 (แม่นยำสูง)',
+                    pbUltra:    '×2.0 (แม่นยำสูงสุด)',
+                    // AI prompt notes language
+                    notesLangInstruction: 'ภาษา: เขียนเป็นภาษาไทยอย่างย่อ พร้อมคำศัพท์เทคนิคภาษาอังกฤษที่เหมาะสม',
+                },
+                en: {
+                    exportExcel: 'EXPORT EXCEL',
+                    pathNotSet: 'Path not set (configure in main app)',
+                    fileQueueTitle: 'File Queue',
+                    addFiles: 'Add drawing files (.pdf/image)',
+                    process: (n) => `Process ${n} item${n !== 1 ? 's' : ''}`,
+                    clearAll: 'Clear All',
+                    estimationSummary: 'Estimation Summary',
+                    materialsLoaded: (n) => `${n} Materials Loaded`,
+                    colPartName: 'Part Name',
+                    colPartNoDwg: 'Part No / Dwg No',
+                    colMaterial: 'Material',
+                    colSizeMat: 'Size Mat (mm)',
+                    colQty: 'QTY',
+                    colMaterialEa: 'Material/Ea. (THB)',
+                    colCncEa: 'CNC/Ea. (THB)',
+                    colCoatingEa: 'Coating/Ea.',
+                    colCoatingUnit: '(THB)',
+                    colPriceEa: 'Price/Ea. (THB)',
+                    colTotal: 'Total (THB)',
+                    grandTotal: 'Grand Total',
+                    noResults: 'No results yet. Please upload and process drawing files.',
+                    minPrice: (n) => `⬆ Min price ${n}`,
+                    calcFromArea: 'Calc from area',
+                    systemLabel: '✓ System',
+                    aiVal: '⚠ AI value',
+                    formulaLabel: '✓ Formula',
+                    noCoating: 'No Coating',
+                    aiEstBadge: 'AI Est. ✏️',
+                    aiEstTooltip: 'AI estimated — please verify and correct to match actual Stock Size (e.g. from STEP file)',
+                    sizeMatPlaceholder: 'e.g. 100x200x50',
+                    technicalNotesLabel: 'Technical Notes',
+                    statusPending: 'Pending',
+                    statusProcessing: 'Analyzing',
+                    statusCompleted: 'Completed',
+                    statusError: 'Error',
+                    searchPlaceholder: (n) => `Search... (${n})`,
+                    notFound: (q) => `Not found "${q}"`,
+                    pathNotConfigured: 'Excel File Path not configured — please set it in the main app first',
+                    exportSuccess: (count, sheet) => `✅ Saved ${count} items → Sheet "${sheet}"`,
+                    exportFileBusy: '❌ Excel file is open. Please close it and try again.',
+                    exportError: (msg) => `❌ ${msg}`,
+                    exportConnectError: (msg) => `❌ Cannot connect to server: ${msg}`,
+                    fileTypeError: (files) => `Unsupported file type:\n${files}\n\nSupported: PDF, JPG, PNG, GIF, WEBP, BMP`,
+                    pbStandard: '×1.0 (Standard)',
+                    pbFine:     '×1.2 (Fine)',
+                    pbPrecision:'×1.5 (Precision)',
+                    pbHigh:     '×1.8 (High Precision)',
+                    pbUltra:    '×2.0 (Ultra Precision)',
+                    notesLangInstruction: 'Language: concise technical English.',
+                }
+            };
+
+            function recompute(res, densities, prices, materialGroups, precisionBase, startPrices, coatingPrices) {
+                const qty = Math.max(1, Number(res.qty) || 1);
+                const sp  = startPrices || { material: 0, cnc: 0, cncSetup: 0 };
+
+                // V5.6: per-row precisionBase override — if user set it manually for this row,
+                // use that; otherwise fall back to the global precisionBase argument.
+                const effectivePb = (res.precisionOverridden && typeof res.precisionBase === 'number' && res.precisionBase > 0)
+                    ? res.precisionBase
+                    : precisionBase;
+
+                // ── Material cost ─────────────────────────────────────────────
+                const matCalc    = calcMaterialCostEa(res.material, res.sizeMat, densities, prices);
+                let unitMaterial = matCalc !== null ? matCalc.cost : (res.unitMaterial || 0);
+                const fromSystem = matCalc !== null;
+                const weightKg   = matCalc?.weightKg ?? null;
+                // Apply material starting price (minimum) then round up to nearest 10
+                const minMaterial   = typeof sp.material === 'number' ? sp.material : 0;
+                const matCapped     = unitMaterial < minMaterial;
+                if (matCapped) unitMaterial = minMaterial;
+                unitMaterial = roundUp10(unitMaterial);
+
+                // ── CNC cost — formula: stockVol × ratio × multiplier × pb / 1000 ──
+                const cncCalc       = calcCNCCostEa(res.material, res.sizeMat, res.removalRatio, materialGroups, effectivePb);
+                let unitCnc         = cncCalc !== null ? cncCalc.cost : (res.unitCnc || 0);
+                const cncFromSystem = cncCalc !== null;
+                // Apply CNC starting price (minimum) then round up to nearest 10
+                const minCnc  = typeof sp.cnc === 'number' ? sp.cnc : 0;
+                const cncCapped = unitCnc < minCnc;
+                if (cncCapped) unitCnc = minCnc;
+                unitCnc = roundUp10(unitCnc);
+
+                // ── CNC Setup (amortized) — same rule as main app ─────────────
+                // qty=1 → full setup cost; qty≥2 → setup / qty
+                const setupTotal  = typeof sp.cncSetup === 'number' ? sp.cncSetup : 0;
+                const unitSetup   = setupTotal > 0 ? setupTotal / qty : 0;
+
+                // ── Coating cost ──────────────────────────────────────────────
+                const coatingCalc = calcCoatingCostEa(res.coating, res.sizeMat, res.material, densities, coatingPrices);
+                let unitCoating   = coatingCalc !== null ? coatingCalc.cost : 0;
+                const minCoating  = typeof sp.coating === 'number' ? sp.coating : 0;
+                if (unitCoating > 0 && unitCoating < minCoating) unitCoating = minCoating;
+                if (unitCoating > 0) unitCoating = roundUp10(unitCoating);
+
+                // ── Final price — round priceEa to nearest 10 ─────────────────
+                const priceEa   = roundUp10(unitMaterial + unitCnc + unitSetup + unitCoating);
+                const totalCost = priceEa * qty;
+
+                return { ...res, qty, unitMaterial, unitCnc, unitSetup, unitCoating, priceEa, totalCost,
+                         precisionBase: effectivePb,  // V5.6: persist effective PB so UI selector shows correct value
+                         fromSystem, weightKg, cncFromSystem, cncCalcDetail: cncCalc,
+                         matCapped, cncCapped, setupTotal, coatingCalcDetail: coatingCalc };
+            }
+
+            // ═══ V5.12: Speed-up helpers — cache + image resize + prewarm ═══
+            // Each is safe (no accuracy impact, no feature change).
+
+            const CACHE_VERSION = 'v1';   // bump to invalidate all cached entries
+            const CACHE_INDEX_KEY = 'aey:_index';
+            const CACHE_MAX_ENTRIES = 100;
+
+            /** sha256 of an ArrayBuffer → hex string */
+            async function _sha256Hex(buf) {
+                const h = await crypto.subtle.digest('SHA-256', buf);
+                return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+
+            /** Hash the raw bytes of a File. */
+            async function _hashFile(file) {
+                const buf = await file.arrayBuffer();
+                return _sha256Hex(buf);
+            }
+
+            function _cacheKey(fileHash, model) {
+                return `aey:${CACHE_VERSION}:${model || 'auto'}:${fileHash}`;
+            }
+
+            /** Read result from cache. Returns parsed object or null. */
+            function _cacheGet(fileHash, model) {
+                try {
+                    const raw = localStorage.getItem(_cacheKey(fileHash, model));
+                    return raw ? JSON.parse(raw) : null;
+                } catch (_) { return null; }
+            }
+
+            /** Save result to cache + update LRU index. Eviction at MAX_ENTRIES. */
+            function _cacheSet(fileHash, model, value) {
+                try {
+                    const key = _cacheKey(fileHash, model);
+                    localStorage.setItem(key, JSON.stringify(value));
+                    // LRU index
+                    let idx = [];
+                    try { idx = JSON.parse(localStorage.getItem(CACHE_INDEX_KEY) || '[]'); } catch (_) {}
+                    idx = idx.filter(k => k !== key);  // remove dup
+                    idx.push(key);                      // newest at end
+                    while (idx.length > CACHE_MAX_ENTRIES) {
+                        const old = idx.shift();
+                        try { localStorage.removeItem(old); } catch (_) {}
+                    }
+                    localStorage.setItem(CACHE_INDEX_KEY, JSON.stringify(idx));
+                } catch (e) {
+                    // localStorage might be full — best-effort, no crash.
+                    console.warn('[cache] write failed:', e.message);
+                }
+            }
+
+            /** Clear all cached analysis results. */
+            function _cacheClearAll() {
+                try {
+                    const idx = JSON.parse(localStorage.getItem(CACHE_INDEX_KEY) || '[]');
+                    idx.forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
+                    localStorage.removeItem(CACHE_INDEX_KEY);
+                } catch (_) {}
+            }
+
+            /** Resize an image File to max dimension (default 2048px) and return
+             *  base64 of the JPEG output. Returns null for PDFs (skip).
+             *  Preserves aspect ratio; skips resize if already small. */
+            async function _resizeImageToBase64(file, maxDim = 2048, quality = 0.9) {
+                const mime = (file.type || '').toLowerCase();
+                if (mime.includes('pdf')) return null;  // PDF: skip — keep original
+                if (!mime.startsWith('image/')) return null;
+                if (file.size < 500 * 1024) return null; // <500KB: skip — already small
+
+                const dataUrl = await new Promise((resolve, reject) => {
+                    const r = new FileReader();
+                    r.onload = () => resolve(r.result);
+                    r.onerror = reject;
+                    r.readAsDataURL(file);
+                });
+                const img = await new Promise((resolve, reject) => {
+                    const im = new Image();
+                    im.onload = () => resolve(im);
+                    im.onerror = reject;
+                    im.src = dataUrl;
+                });
+                const w = img.naturalWidth, h = img.naturalHeight;
+                const biggest = Math.max(w, h);
+                if (biggest <= maxDim) return null; // already within budget — no resize
+                const scale = maxDim / biggest;
+                const tw = Math.round(w * scale), th = Math.round(h * scale);
+                const canvas = document.createElement('canvas');
+                canvas.width = tw; canvas.height = th;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, 0, 0, tw, th);
+                const outDataUrl = canvas.toDataURL('image/jpeg', quality);
+                return { base64: outDataUrl.split(',')[1], mimeType: 'image/jpeg', originalDim: [w, h], outputDim: [tw, th] };
+            }
+
+            /** Pre-warm HTTPS connection on app mount. Cheap GET to a known endpoint
+             *  so DNS+TLS handshake completes BEFORE user's first analyze. */
+            let _prewarmDone = false;
+            function _prewarmConnection() {
+                if (_prewarmDone) return;
+                _prewarmDone = true;
+                try {
+                    fetch('/api/config/ai', { method: 'GET', cache: 'no-store' }).catch(() => {});
+                } catch (_) {}
+            }
+
+            // ─── App ────────────────────────────────────────────────────────────
+            const App = () => {
+                const [files,     setFiles]     = useState([]);
+                const [results,   setResults]   = useState([]);
+                const [analyzing,     setAnalyzing]     = useState(false);
+                const [matData,       setMatData]       = useState({ allNames: [], densities: {}, prices: {}, groups: DEFAULT_CUTTING_GROUPS, startPrices: { material: 120, coating: 200, cnc: 300, cncSetup: 0 }, coatingPrices: DEFAULT_COATING_PRICES, coatingOptions: BASE_COATING_OPTIONS });
+                const [precisionBase, setPrecisionBase] = useState(1.0);
+                const [exportMsg,     setExportMsg]     = useState(null); // { type:'success'|'error'|'warn', text }
+                const [lang,          setLang]          = useState(() => localStorage.getItem('language') || 'th');
+                // Gemini key rotation status (live badge in navbar)
+                const [keyStatus, setKeyStatus] = useState({ key_count: 0, current_key_index: 0, has_openrouter: false });
+
+                // Sync language from main app (via localStorage storage event)
+                useEffect(() => {
+                    const onStorage = (e) => {
+                        if (e.key === 'language' && e.newValue) setLang(e.newValue);
+                    };
+                    window.addEventListener('storage', onStorage);
+                    return () => window.removeEventListener('storage', onStorage);
+                }, []);
+
+                const t = TRANSLATIONS[lang] || TRANSLATIONS.th;
+
+                const toggleLang = () => {
+                    const next = lang === 'th' ? 'en' : 'th';
+                    localStorage.setItem('language', next);
+                    setLang(next);
+                };
+
+                useEffect(() => { setMatData(loadMaterialData()); }, []);
+
+                // V5.12: pre-warm HTTPS connection on mount → first analyze 1-2s faster
+                useEffect(() => { _prewarmConnection(); }, []);
+
+                // V5.12: ETA timer state (rolling avg seconds per file)
+                const [etaSec, setEtaSec] = useState(null);
+
+                // V5.8: Refresh matData when user returns to PDF/JPG tab after editing
+                // Settings (Material/Coating add/edit/delete) — keep dropdowns up-to-date.
+                useEffect(() => {
+                    const refresh = () => setMatData(loadMaterialData());
+                    const onFocus = () => refresh();
+                    const onVisibility = () => { if (document.visibilityState === 'visible') refresh(); };
+                    const onStorage = (e) => {
+                        // Only refresh on the keys we actually depend on
+                        if (e.key === 'materialGroups' || e.key === 'materialDensities' || e.key === 'materialPrices'
+                            || e.key === 'coatingPrices' || e.key === 'coatingList' || e.key === 'startPrices') {
+                            refresh();
+                        }
+                    };
+                    window.addEventListener('focus', onFocus);
+                    document.addEventListener('visibilitychange', onVisibility);
+                    window.addEventListener('storage', onStorage);
+                    return () => {
+                        window.removeEventListener('focus', onFocus);
+                        document.removeEventListener('visibilitychange', onVisibility);
+                        window.removeEventListener('storage', onStorage);
+                    };
+                }, []);
+
+                // Fetch & refresh key rotation status from backend
+                const refreshKeyStatus = useCallback(() => {
+                    fetch('/api/gemini-key-status')
+                        .then(r => r.json())
+                        .then(d => { if (d && d.ok) setKeyStatus(d); })
+                        .catch(() => {});
+                }, []);
+                useEffect(() => { refreshKeyStatus(); }, []); // on mount
+
+                // ── clear all — รีเซ็ตหน้าพร้อมเริ่มใหม่ ──────────────────────
+                const clearAll = useCallback(() => {
+                    setFiles([]);
+                    setResults([]);
+                    setAnalyzing(false);
+                    setExportMsg(null);
+                    setEtaSec(null);
+                    // V5.12 #1: clear analysis cache so user can re-run with fresh AI
+                    _cacheClearAll();
+                }, []);
+
+                // ── update single field + recompute ──────────────────────────
+                // extra: optional object of additional fields to merge (e.g. { sizeMatEdited: true })
+                const updateResult = useCallback((fileId, field, value, extra = {}) => {
+                    setResults(prev => prev.map(r => {
+                        if (r.fileId !== fileId) return r;
+                        const updated = { ...r, [field]: value, ...extra };
+                        return recompute(updated, matData.densities, matData.prices, matData.groups, precisionBase, matData.startPrices, matData.coatingPrices);
+                    }));
+                }, [matData, precisionBase]);
+
+                // ── re-run recompute when precision changes ───────────────────
+                useEffect(() => {
+                    setResults(prev => prev.map(r =>
+                        recompute(r, matData.densities, matData.prices, matData.groups, precisionBase, matData.startPrices, matData.coatingPrices)
+                    ));
+                }, [precisionBase]);
+
+                // ── file helpers ─────────────────────────────────────────────
+                const ALLOWED_MIME = new Set([
+                    'image/jpeg','image/jpg','image/png','image/gif',
+                    'image/webp','image/bmp','image/tiff','image/tiff','application/pdf'
+                ]);
+                const ALLOWED_EXT = /\.(jpe?g|png|gif|webp|bmp|tiff?|pdf)$/i;
+
+                const _validateAndWrap = (files) => {
+                    const accepted = [];
+                    const rejected = [];
+                    for (const file of files) {
+                        const ok = ALLOWED_MIME.has(file.type) || ALLOWED_EXT.test(file.name);
+                        if (!ok) { rejected.push(file.name); continue; }
+                        accepted.push({
+                            file,
+                            id: Math.random().toString(36).substr(2, 9),
+                            status: 'pending',
+                            preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
+                        });
+                    }
+                    if (rejected.length > 0) {
+                        alert(t.fileTypeError(rejected.join('\n')));
+                    }
+                    return accepted;
+                };
+
+                const onFileChange = (e) => {
+                    const accepted = _validateAndWrap(Array.from(e.target.files));
+                    if (accepted.length > 0) setFiles(prev => [...prev, ...accepted]);
+                    e.target.value = ''; // reset so same file can be re-added after removal
+                };
+
+                const removeFile = (id) => {
+                    setFiles(prev => prev.filter(f => f.id !== id));
+                    setResults(prev => prev.filter(r => r.fileId !== id));
+                };
+
+                // ── analyze ──────────────────────────────────────────────────
+                const analyzeFile = async (fileObj) => {
+                    const { file } = fileObj;
+
+                    // V5.12 #1: Cache check — hash file + look up result by hash
+                    // Cache scoped per (model, file content), invalidated when model changes.
+                    let fileHash = null;
+                    const cacheModel = 'auto'; // backend picks Gemini→OpenRouter chain; cache per file only
+                    try {
+                        fileHash = await _hashFile(file);
+                        const cached = _cacheGet(fileHash, cacheModel);
+                        if (cached) {
+                            // Re-stamp identity for THIS upload + recompute via current settings
+                            const raw = {
+                                ...cached,
+                                fileId: fileObj.id,
+                                _cached: true,
+                                _engine: (cached._engine || 'cache') + '-cache',
+                                _costThb: 0,
+                                _costUsd: 0,
+                                _tokensIn: 0,
+                                _tokensOut: 0,
+                            };
+                            return recompute(raw, matData.densities, matData.prices, matData.groups, precisionBase, matData.startPrices, matData.coatingPrices);
+                        }
+                    } catch (_) { /* hashing failed — fall through to live API */ }
+
+                    // V5.12 #2: Image resize for large JPG/PNG → reduce payload + AI time
+                    let mimeType = file.type.includes('pdf') ? 'application/pdf' : file.type;
+                    let base64Data = null;
+                    try {
+                        const resized = await _resizeImageToBase64(file, 2048, 0.9);
+                        if (resized && resized.base64) {
+                            base64Data = resized.base64;
+                            mimeType = resized.mimeType;
+                            console.log(`[analyze] Resized ${file.name}: ${resized.originalDim.join('x')} → ${resized.outputDim.join('x')}`);
+                        }
+                    } catch (e) {
+                        console.warn('[analyze] resize failed, using original:', e.message);
+                    }
+                    if (!base64Data) {
+                        // Original (PDF, small image, or resize failed) — read as-is
+                        base64Data = await new Promise(resolve => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                            reader.readAsDataURL(file);
+                        });
+                    }
+
+                    // Build dynamic rate card from system material groups
+                    const rateGroups = matData.groups || DEFAULT_CUTTING_GROUPS;
+                    const rateLines  = rateGroups.map(g => {
+                        const ex = Array.isArray(g.materials) ? g.materials.slice(0,4).join(', ') : '';
+                        const more = g.materials && g.materials.length > 4 ? '…' : '';
+                        const lbl  = typeof g.label === 'object' ? (g.label.en || g.label.th || '') : (g.label || '');
+                        return `  - ${lbl} (e.g. ${ex}${more}): ${g.multiplier} THB/mm³`;
+                    }).join('\n');
+
+                    const systemPrompt = `You are a professional CNC Engineering and Pricing Expert.
+Analyze the engineering drawing and extract the following:
+
+1. Part Name.
+2. Part No (if found in title block, else empty string).
+3. Drawing No (if found in title block, else empty string).
+4. Material (e.g., S45C, AL6061, SUS304).
+5. Size Mat — Stock Size required to produce this part.
+
+   ════════════════════════════════════════════════════════════════
+   ⚡ PRIORITY RULE — DETECT STOCK SIZE IN THIS STRICT ORDER
+   ════════════════════════════════════════════════════════════════
+
+   ── PRIORITY 1 (HIGHEST): HIGHLIGHTED / COLOR-BOXED DIMENSIONS ──────────
+   Scan the ENTIRE drawing for dimension numbers enclosed in:
+     • Yellow highlight boxes  • Colored fill boxes (any color)
+     • Cloud/bubble callouts around a number
+     • Bold rectangular border drawn around a single number
+     • Hatched or shaded background behind a dimension value
+   These are STOCK SIZE dimensions placed deliberately by the drafter.
+
+   ✦ HOW TO COLLECT highlighted dimensions into a stock size:
+     - Gather ALL highlighted numbers found on the drawing.
+     - They represent the 3 stock dimensions: Thickness × Width × Length
+       (or Dia × Length for cylinders).
+     - Sort them smallest → largest to assign: smallest = thickness,
+       middle = width, largest = length.
+     - Example: highlighted numbers 35, 93, 126 → sizeMat = "35x93x126"
+     - Example: highlighted numbers 50, 120 → cylinder → sizeMat = "50x120"
+
+   ✦ DO NOT confuse highlighted stock dimensions with regular part dimensions:
+     - Regular dimension lines (thin arrows, no box) = part geometry, NOT stock size.
+     - Highlighted box number = STOCK dimension, always take priority.
+
+   ── PRIORITY 2: EXPLICIT TEXT LABEL ─────────────────────────────────────
+   If no highlighted boxes found, look for text patterns:
+     • "Size : 12×148×230 mm"  or  "Size : 12*148*230mm"
+     • "Stock : 50×100×200"    or  "STOCK SIZE 50×100×200"
+     • "Mat Size : Ø50×120"    or  "Raw Material: Ø50×120 mm"
+     • "วัสดุ : 20×50×100 mm"  or  "ขนาดวัสดุ : 20×50×100"
+     • Any label containing: Size, Stock, Raw, Material, Mat, วัสดุ, ขนาด
+       followed by dimensions.
+
+   ── PRIORITY 3 (LOWEST): ESTIMATE FROM GEOMETRY ─────────────────────────
+   Only if neither Priority 1 nor Priority 2 yields a result:
+     - Rectangular: largest outer bounding box H × W × L (mm),
+       add machining allowance ~2–5 mm per side.
+     - Cylindrical: "Dia × Length" in mm, add ~2–5 mm allowance.
+     - Always convert inches → mm (1 inch = 25.4 mm).
+
+   ✦ OPERATOR SYMBOLS — treat all as dimension separators:
+     ×  *  x  X  ·  ,  /  –   (e.g. "12*148*230" = 12 × 148 × 230 mm)
+
+   ✦ If Priority 1 or 2 stock size IS found → use it EXACTLY.
+     Do NOT add machining allowance (already included by drafter).
+     Do NOT override with geometry estimate.
+
+   Output format: "HxWxL" or "DiaxL" (no spaces, use 'x' separator).
+
+6. QTY — quantity from the drawing title block; default to 1 if not stated.
+7. Total Material Cost (THB) for the specified QTY, based on material type and stock size.
+8. Total CNC Process Cost (THB) for the specified QTY.
+   Use the rate card below. Formula: CNC Cost = StockVolume(mm³) × removalRatio × rate / 1000 × QTY
+
+   === CNC PRICING RATE CARD (THB/mm³ of removed material) ===
+${rateLines}
+
+   Steps:
+   a) Identify the material's cutting group from the rate card above.
+   b) Compute StockVolume from Size Mat: rectangle = H×W×L, cylinder = π×(D/2)²×L.
+   c) Estimate removalRatio (see field 9).
+   d) CNC Cost (total) = StockVolume × removalRatio × rate / 1000 × QTY
+
+9. removalRatio — TRUE fraction of stock volume machined away (chip volume ÷ stock volume).
+   Verified against real 3D STEP geometry. Accuracy is critical — do NOT overestimate.
+
+   ═══ CORE METHOD: "Bounding-Box Fill Fraction" ═══
+   Step 1 — Estimate FILL FRACTION: From the drawing views, estimate what fraction of
+            the bounding-box volume is SOLID MATERIAL in the finished part.
+            • A mostly-solid boxy housing → fill ≈ 0.60–0.75
+            • A moderately machined block → fill ≈ 0.45–0.60
+            • A thin bracket with large cutouts → fill ≈ 0.20–0.40
+   Step 2 — removalRatio = 1 − fill_fraction
+
+   ═══ CALIBRATED REFERENCE TABLE (from real 3D data) ═══
+   Part description                                    fill    removalRatio
+   ─────────────────────────────────────────────────────────────────────
+   Flat bar/plate — edge profile only, mostly intact   0.80+   0.05–0.20
+   Housing / Body / Coil / Assembly — solid block      0.60–0.75  0.25–0.40
+     with surface steps, profiles, holes on faces
+   Block machined on 2–3 faces, moderate pockets       0.50–0.65  0.35–0.50
+   Parts with slots, ribs, moderate pockets 3+ faces   0.40–0.55  0.45–0.60
+   Thin bracket / Stay / Mount — large cutouts,        0.20–0.40  0.60–0.80
+     most stock between features is REMOVED
+   Near-complete machining — thin walls, deep ribs     <0.20      0.80–0.95
+
+   ═══ CRITICAL RULES — READ CAREFULLY ═══
+   ✦ "Step profiles on multiple faces" does NOT mean high removal.
+     A SOLID HOUSING with surface steps retains 60–75% of stock → ratio 0.25–0.40.
+     Only use 0.60–0.80 if the part is clearly a THIN BRACKET where most stock
+     BETWEEN the remaining walls is air/cut-away.
+
+   ✦ Part name keywords → expected ratio range:
+     "Housing", "Body", "Coil", "Yoke", "Frame", "Assy", "Assembly",
+     "Block", "Plate", "Jig", "Fixture", "Checking Mach" → 0.20–0.45
+     "Stay", "Bracket", "Mount", "Arm" (thin, mostly cut-through) → 0.55–0.80
+
+   ✦ THICKNESS check: if the part is thin (e.g. 28 mm) but has a LARGE FLAT FACE
+     (e.g. 200×200 mm) — the step profiles are shallow relative to total volume
+     → most material in the flat face remains solid → ratio typically 0.25–0.45.
+
+   ✦ Calibration examples (verified STEP data):
+     • S45C Housing 28×223×226 mm, profiles on all faces  → removalRatio = 0.37
+     • A5083 Stay/Bracket 31×40×160 mm, large steps both sides → removalRatio = 0.72
+
+   Return as a decimal number between 0.0 and 1.0.
+
+10. Technical Notes — populate ONLY when one or more critical conditions are detected.
+    Leave as empty string "" if NONE apply.
+
+    Conditions that REQUIRE a note:
+    - Tight tolerances: H7/h6 fits, precision bores needing reaming or cylindrical grinding.
+    - Deep or long holes: L/D ratio > 5, requiring peck drilling, chip evacuation, or gun drilling.
+    - Hard or difficult-to-cut materials: hardness > 45 HRC, hardened steel, Inconel, titanium, ceramics.
+    - Small bores or micro threads: hole diameter < 3 mm or thread < M4, high tool breakage risk.
+    - Complex surface finishing: anodizing, PVD/CVD coating, hard chrome, mirror polishing.
+    - Multi-process parts: Wire EDM, sinker EDM, ID/OD/surface grinding, hard turning, or honing.
+    - Mold & die components: thin walls < 1.5 mm, deep ribs, fine detail requiring EDM + grinding.
+
+    Output format when a note IS required:
+    - Maximum 2–3 bullet points per language version.
+    - Each point: [Risk or Challenge] → [Recommended action or tooling consideration].
+    - You MUST provide TWO versions of the technical notes:
+      ▸ technicalNotesTH — written in Thai (ภาษาไทย) with English technical terms where appropriate.
+        Example: "• รู Ø8H7 → ใช้ reamer หรือ boring bar เพื่อควบคุม tolerance ±0.01 mm"
+      ▸ technicalNotesEN — written in English.
+        Example: "• Bore Ø8H7 → use reamer or boring bar to maintain tolerance ±0.01 mm"
+    - If no conditions apply, set BOTH fields to empty string "".
+
+Return ONLY a JSON object with keys:
+"partName", "partNo", "drawingNo", "material", "sizeMat", "qty", "materialCost", "cncCost", "removalRatio", "technicalNotesTH", "technicalNotesEN".`;
+
+                    const payload = {
+                        contents: [{ parts: [
+                            { text: "Estimate this part." },
+                            { inlineData: { mimeType, data: base64Data } }
+                        ]}],
+                        systemInstruction: { parts: [{ text: systemPrompt }] },
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                type: "OBJECT",
+                                required: ["partName","partNo","drawingNo","material","sizeMat","qty","materialCost","cncCost","removalRatio","technicalNotesTH","technicalNotesEN"],
+                                properties: {
+                                    partName: { type: "STRING" }, partNo: { type: "STRING" },
+                                    drawingNo: { type: "STRING" }, material: { type: "STRING" },
+                                    sizeMat: { type: "STRING" }, qty: { type: "NUMBER" },
+                                    materialCost: { type: "NUMBER" }, cncCost: { type: "NUMBER" },
+                                    removalRatio: { type: "NUMBER" },
+                                    technicalNotesTH: { type: "STRING" },
+                                    technicalNotesEN: { type: "STRING" }
+                                }
+                            }
+                        }
+                    };
+
+                    // V5.9: Route via proxy when user picked "ใช้ AI ของแพ็กเกจ" (Monthly+ plans)
+                    const _aiMode = (() => { try { return localStorage.getItem('ai_mode'); } catch { return null; } })();
+                    const _PAID = new Set(['monthly','yearly','lifetime']);
+                    let _planForRoute = 'free';
+                    try {
+                        const _me = await window.webAuth?.me?.();
+                        if (_me?.ok && _me.user?.plan) _planForRoute = String(_me.user.plan).toLowerCase();
+                    } catch (_) {}
+                    const _useProxy = _aiMode === 'proxy' && _PAID.has(_planForRoute) && typeof window.webAuth?.aiProxyAnalyze === 'function';
+
+                    let result;
+                    if (_useProxy) {
+                        const pr = await window.webAuth.aiProxyAnalyze(payload);
+                        if (!pr || !pr.ok) {
+                            const msg = pr?.error || pr?.friendly || 'AI proxy failed';
+                            throw new Error(String(msg));
+                        }
+                        // pr is { ok: true, candidates: [...], _engine, _model, _via_proxy }
+                        result = pr;
+                    } else {
+                        const response = await fetch('/api/aey-analyze', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (!response.ok) {
+                            const errData = await response.json();
+                            let msg = errData.friendly || errData.error?.error?.message || errData.error?.message || errData.error || "API Connection Failed";
+                            if (typeof msg === 'object') msg = JSON.stringify(msg);
+                            throw new Error(String(msg));
+                        }
+                        result = await response.json();
+                    }
+                    if (!result.candidates?.length) throw new Error("No result from API.");
+                    // Refresh key badge (only meaningful in own-key mode, but safe to call always)
+                    if (!_useProxy) refreshKeyStatus();
+                    const usedEngine = result._engine || 'gemini';
+
+                    let rawText = result.candidates[0].content.parts[0].text.trim()
+                        .replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
+                    const data = JSON.parse(rawText);
+
+                    // Safety fallback — empty partName
+                    if (!data.partName || String(data.partName).trim() === '') {
+                        // ใช้ชื่อไฟล์แทน (ลบนามสกุล)
+                        data.partName = file.name.replace(/\.[^/.]+$/, '');
+                    }
+                    if (data.partNo === null || data.partNo === undefined) data.partNo = '';
+                    if (data.drawingNo === null || data.drawingNo === undefined) data.drawingNo = '';
+
+                    const qty           = Math.max(1, Number(data.qty) || 1);
+                    const unitMaterial  = qty > 0 ? data.materialCost / qty : data.materialCost;
+                    const unitCncAI     = qty > 0 ? data.cncCost      / qty : data.cncCost;
+                    const removalRatio  = (typeof data.removalRatio === 'number') ? data.removalRatio : 0;
+                    const priceEa       = unitMaterial + unitCncAI;
+                    const totalCost     = priceEa * qty;
+
+                    // Store bilingual notes; also keep 'technicalNotes' as backward-compat fallback
+                    const technicalNotesTH = data.technicalNotesTH || data.technicalNotes || '';
+                    const technicalNotesEN = data.technicalNotesEN || data.technicalNotes || '';
+
+                    const raw = { ...data, fileId: fileObj.id, fileName: file.name, qty,
+                                  unitMaterial, unitCnc: unitCncAI, removalRatio,
+                                  priceEa, totalCost,
+                                  technicalNotesTH, technicalNotesEN,
+                                  _engine: usedEngine,
+                                  _model: result._model || null,
+                                  _costThb: typeof result._costThb === 'number' ? result._costThb : null,
+                                  _costUsd: typeof result._costUsd === 'number' ? result._costUsd : null,
+                                  _tokensIn: result._tokensIn || 0,
+                                  _tokensOut: result._tokensOut || 0 };
+                    // V5.12 #1: Cache the raw AI result by file hash (lightweight, no UI fields)
+                    if (fileHash) {
+                        try { _cacheSet(fileHash, cacheModel, raw); } catch (_) {}
+                    }
+                    // Recompute material + CNC + coating cost using system data & formula
+                    return recompute(raw, matData.densities, matData.prices, matData.groups, precisionBase, matData.startPrices, matData.coatingPrices);
+                };
+
+                const startBatchAnalysis = async () => {
+                    if (!files.some(f => f.status === 'pending')) return;
+
+                    // [B.5] Quota gate — only enforced for Free web users.
+                    // License.dat (paid offline yearly/lifetime) → unlimited locally.
+                    let _quotaAllowedCount = Infinity;
+                    let _skipQuotaLog = false;
+                    try {
+                        const _lic = await window.api?.validateLicense?.();
+                        if (_lic?.ok && (_lic.status === 'active' || _lic.status === 'grace')) {
+                            _skipQuotaLog = true; // valid offline license → no quota tracking
+                        }
+                    } catch (_) {}
+                    if (!_skipQuotaLog) {
+                        const sess = await window.webAuth?.getSession?.();
+                        if (sess?.ok && sess.session?.token) {
+                            const pendingCount = files.filter(f => f.status === 'pending').length;
+                            // Free plan REQUIRES internet — fail-CLOSED if quota check errors out.
+                            let q;
+                            try { q = await window.webAuth.quotaCheck(pendingCount); } catch (_) { q = null; }
+                            if (!q || !q.ok) {
+                                alert(lang === 'th'
+                                    ? '❌ ตรวจสอบสิทธิ์ไม่ได้ — แพ็กเกจ Free ต้องเชื่อมต่ออินเทอร์เน็ตขณะใช้งาน'
+                                    : '❌ Cannot verify access — Free plan requires an internet connection');
+                                return;
+                            }
+                            if (q.limit !== null) {
+                                _quotaAllowedCount = q.allowedCount;
+                                if (q.allowedCount === 0) {
+                                    alert((lang === 'th'
+                                        ? `โควต้าฟรีของวันนี้หมดแล้ว (${q.used}/${q.limit} ไฟล์)\n\nอัปเกรดเพื่อใช้ไฟล์ไม่จำกัด`
+                                        : `Daily free quota exhausted (${q.used}/${q.limit} files)\n\nUpgrade for unlimited usage`));
+                                    try { await window.webAuth.openUrl('https://www.cnccostify.cloud/' + (lang || 'th') + '/upgrade'); } catch (_) {}
+                                    return;
+                                }
+                                if (q.allowedCount < pendingCount) {
+                                    const ok = confirm(lang === 'th'
+                                        ? `เหลือโควต้า ${q.allowedCount} ไฟล์จาก ${pendingCount} ที่เลือก\nจะประมวลผลเฉพาะ ${q.allowedCount} ไฟล์แรก ดำเนินการต่อ?`
+                                        : `Quota allows ${q.allowedCount} of ${pendingCount} selected.\nOnly the first ${q.allowedCount} will be processed. Continue?`);
+                                    if (!ok) return;
+                                }
+                            }
+                        }
+                    }
+
+                    setAnalyzing(true);
+                    setEtaSec(null);
+
+                    // V5.11 — Parallel batch processing with worker pool (concurrency = 3).
+                    // V5.12 — Adds ETA based on rolling average after first completed file.
+                    const pending = files.filter(f => f.status === 'pending');
+                    const cap = Math.min(pending.length, _quotaAllowedCount);
+                    const targets = pending.slice(0, cap);
+                    const blocked = pending.slice(cap);
+                    if (blocked.length > 0) {
+                        const blockedIds = new Set(blocked.map(b => b.id));
+                        setFiles(prev => prev.map(x => blockedIds.has(x.id)
+                            ? { ...x, status: 'error', errorMessage: lang === 'th' ? 'โควต้าฟรีของวันนี้หมด' : 'Daily quota exhausted' }
+                            : x));
+                    }
+
+                    const CONCURRENCY = 3;
+                    let idx = 0;
+                    const completedTimes = [];   // ms per file, last 5 used for rolling avg
+                    const totalToProcess = targets.length;
+                    const recomputeEta = () => {
+                        if (completedTimes.length === 0) return;
+                        const recent = completedTimes.slice(-5);
+                        const avgMs = recent.reduce((a, b) => a + b, 0) / recent.length;
+                        const remaining = totalToProcess - completedTimes.length;
+                        if (remaining <= 0) { setEtaSec(0); return; }
+                        // Account for concurrency: remaining files / parallel slots × avg
+                        const batches = Math.ceil(remaining / Math.min(CONCURRENCY, totalToProcess));
+                        setEtaSec(Math.max(1, Math.round((batches * avgMs) / 1000)));
+                    };
+
+                    const processOne = async (f) => {
+                        const startedAt = Date.now();
+                        setFiles(prev => prev.map(x => x.id === f.id
+                            ? { ...x, status: 'processing', _startedAt: startedAt }
+                            : x));
+                        try {
+                            const res = await analyzeFile(f);
+                            const elapsed = Date.now() - startedAt;
+                            // V5.12: Skip ETA contribution for cache hits (they're ~0ms — would skew the average)
+                            if (!res?._cached) completedTimes.push(elapsed);
+                            setResults(prev => [...prev, res]);
+                            setFiles(prev => prev.map(x => x.id === f.id
+                                ? { ...x, status: 'completed', _elapsedMs: elapsed }
+                                : x));
+                            recomputeEta();
+                            if (!_skipQuotaLog && !res?._cached) {
+                                // Don't burn quota when serving from cache
+                                try {
+                                    window.webAuth?.quotaLog?.({
+                                        fileType: (f.file.type || '').includes('pdf') ? 'pdf' : 'jpg',
+                                        fileName: f.file.name,
+                                        fileSize: f.file.size,
+                                    });
+                                } catch (_) {}
+                            }
+                        } catch (e) {
+                            setFiles(prev => prev.map(x => x.id === f.id
+                                ? { ...x, status: 'error', errorMessage: e.message }
+                                : x));
+                        }
+                    };
+                    const worker = async () => {
+                        while (idx < targets.length) {
+                            const my = targets[idx++];
+                            await processOne(my);
+                        }
+                    };
+                    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, targets.length) }, () => worker()));
+                    setAnalyzing(false);
+                    setEtaSec(null);
+                };
+
+                // ── export — write to configured Excel file as new sheet ─────
+                const DEFAULT_EXCEL_PATH = 'c:\\Users\\HP\\Documents\\AI Project\\CNC Costify AI\\Cost Data.xlsx';
+
+                const exportToExcel = async () => {
+                    setExportMsg(null);
+
+                    // Read file path from the same localStorage key as the main app
+                    const filePath = (localStorage.getItem('excelFilePath') || DEFAULT_EXCEL_PATH).trim();
+                    if (!filePath) {
+                        setExportMsg({ type: 'warn', text: t.pathNotConfigured });
+                        return;
+                    }
+
+                    // Column A = running No., Column B = ชื่องาน
+                    const headers = lang === 'th'
+                        ? ['No.','ชื่องาน','Part No','Drawing No','วัสดุ','ขนาดวัสดุ (Size Mat)','จำนวน','ค่าวัสดุ/Ea. (THB)','ค่า CNC/Ea. (THB)','CNC Setup/Ea. (THB)','Coating','ค่า Coating/Ea. (THB)','ราคา/Ea. (THB)','รวม (Total THB)','หมายเหตุ']
+                        : ['No.','Part Name','Part No','Drawing No','Material','Size Mat (mm)','QTY','Material/Ea. (THB)','CNC/Ea. (THB)','CNC Setup/Ea. (THB)','Coating','Coating/Ea. (THB)','Price/Ea. (THB)','Total (THB)','Technical Notes'];
+
+                    const fmtN = n => isNaN(n) ? 0 : parseFloat(Number(n).toFixed(2));
+                    const rows = results.map((r, i) => [
+                        i + 1,
+                        r.partName   || '',
+                        r.partNo     || '',
+                        r.drawingNo  || '',
+                        r.material   || '',
+                        r.sizeMat    || '',
+                        r.qty        || 1,
+                        fmtN(r.unitMaterial),
+                        fmtN(r.unitCnc),
+                        fmtN(r.unitSetup || 0),
+                        (r.coating && r.coating !== 'noOption') ? (r.coating || '') : t.noCoating,
+                        fmtN(r.unitCoating || 0),
+                        fmtN(r.priceEa),
+                        fmtN(r.totalCost),
+                        lang === 'th'
+                            ? (r.technicalNotesTH || r.technicalNotes || '')
+                            : (r.technicalNotesEN || r.technicalNotes || '')
+                    ]);
+
+                    // Grand total summary row — label at col M (idx 12), value at col N (idx 13, รวม)
+                    const grandTotalVal = results.reduce((s, r) => s + (r.totalCost || 0), 0);
+                    rows.push(['', '', '', '', '', '', '', '', '', '', '', '', t.grandTotal, fmtN(grandTotalVal), '']);
+
+                    try {
+                        const resp = await fetch('/api/save-excel-pdf', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ filePath, headers, rows })
+                        });
+                        const data = await resp.json();
+                        if (data.ok) {
+                            setExportMsg({ type: 'success', text: t.exportSuccess(data.rowCount, data.sheetName) });
+                        } else if (data.error === 'FILE_BUSY' || /EBUSY|resource busy|locked/i.test(data.error || '')) {
+                            setExportMsg({ type: 'error', text: t.exportFileBusy });
+                        } else {
+                            setExportMsg({ type: 'error', text: t.exportError(data.message || data.error || (lang === 'th' ? 'เกิดข้อผิดพลาด' : 'An error occurred')) });
+                        }
+                    } catch (e) {
+                        setExportMsg({ type: 'error', text: t.exportConnectError(e.message) });
+                    }
+                };
+
+                // ── totals row ───────────────────────────────────────────────
+                const grandTotal = results.reduce((s, r) => s + (r.totalCost || 0), 0);
+
+                return (
+                    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-20">
+                        {/* Navbar */}
+                        <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 px-6 py-4 shadow-sm">
+                            <div className="w-full mx-auto flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-blue-600 p-2.5 rounded-2xl text-white shadow-lg shadow-blue-200">
+                                        <Calculator className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-xl font-black tracking-tight uppercase">PDF/JPG Costify - Analysis</h1>
+                                        <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest">www.cnccostify.cloud 🐒</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-1">
+                                    <div className="flex items-center gap-2">
+                                        {/* Gemini Key Status Badge — แสดง key ที่กำลังใช้งาน */}
+                                        {keyStatus.key_count > 0 && (
+                                            <div
+                                                title={
+                                                    keyStatus.key_count > 1
+                                                        ? `Gemini API: ใช้ key ที่ ${keyStatus.current_key_index} จาก ${keyStatus.key_count} keys — เวียนอัตโนมัติเมื่อ quota เต็ม${keyStatus.has_openrouter ? '\nมี OpenRouter fallback พร้อมแล้ว' : ''}`
+                                                        : `Gemini API: 1 key${keyStatus.has_openrouter ? ' + OpenRouter fallback' : ''}`
+                                                }
+                                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold cursor-default select-none
+                                                           bg-emerald-50 border-emerald-200 text-emerald-700"
+                                            >
+                                                <span>🔑</span>
+                                                {keyStatus.key_count > 1 ? (
+                                                    <span>
+                                                        key&nbsp;
+                                                        <span className="text-emerald-900 font-black">{keyStatus.current_key_index}</span>
+                                                        <span className="text-emerald-500">/{keyStatus.key_count}</span>
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-emerald-700">1 key</span>
+                                                )}
+                                                {keyStatus.has_openrouter && (
+                                                    <span title="OpenRouter fallback พร้อม" className="text-purple-500 text-[10px]">+OR</span>
+                                                )}
+                                            </div>
+                                        )}
+                                        <button onClick={exportToExcel} disabled={results.length === 0}
+                                            className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg">
+                                            <Download className="w-4 h-4" /> {t.exportExcel}
+                                        </button>
+                                    </div>
+                                    {/* File path hint */}
+                                    <span className="text-[9px] text-slate-400 max-w-[260px] truncate text-right" title={localStorage.getItem('excelFilePath') || ''}>
+                                        📁 {(localStorage.getItem('excelFilePath') || t.pathNotSet).split('\\').slice(-1)[0] || '...'}
+                                    </span>
+                                    {/* Export result message */}
+                                    {exportMsg && (
+                                        <span className={`text-[10px] font-bold px-3 py-1 rounded-lg max-w-[320px] text-right
+                                            ${exportMsg.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                              exportMsg.type === 'warn'    ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                                                                             'bg-red-50 text-red-700 border border-red-200'}`}>
+                                            {exportMsg.text}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </nav>
+
+                        <main className="w-full mx-auto p-6 space-y-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 xl:gap-8">
+
+                                {/* File Queue */}
+                                <div className="lg:col-span-4 xl:col-span-3 space-y-4 lg:space-y-6">
+                                    <div className="bg-white rounded-[2rem] p-6 shadow-xl border border-slate-100">
+                                        <h2 className="text-sm font-black mb-4 flex items-center gap-2 text-slate-400 uppercase tracking-widest">
+                                            <FileSearch className="w-4 h-4" /> {t.fileQueueTitle}
+                                        </h2>
+                                        <div className="border-2 border-dashed border-slate-200 rounded-3xl p-6 text-center hover:border-blue-400 transition-all relative bg-slate-50 group mb-6">
+                                            <input type="file" multiple accept="image/*,.pdf" onChange={onFileChange} className="absolute inset-0 opacity-0 cursor-pointer z-20" />
+                                            <Upload className="w-8 h-8 mx-auto mb-2 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                                            <p className="text-xs font-bold text-slate-500">{t.addFiles}</p>
+                                        </div>
+                                        <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                            {files.map(f => (
+                                                <div key={f.id} className="flex items-center justify-between p-2 bg-slate-50 rounded-xl border border-slate-100 group">
+                                                    <div className="flex items-center gap-2 overflow-hidden">
+                                                        {f.preview ? <img src={f.preview} className="w-8 h-8 object-cover rounded shadow-sm" /> : <FileText className="w-8 h-8 text-blue-400" />}
+                                                        <div className="truncate w-full max-w-[180px]">
+                                                            <p className="text-[10px] font-bold text-slate-700 truncate">{f.file.name}</p>
+                                                            <StatusBadge status={f.status} lang={lang} startedAt={f._startedAt} elapsedMs={f._elapsedMs} />
+                                                            {f.errorMessage && <p className="text-[8px] text-red-500 mt-1 leading-tight break-words whitespace-normal" title={f.errorMessage}>{f.errorMessage}</p>}
+                                                        </div>
+                                                    </div>
+                                                    <button onClick={() => removeFile(f.id)} className="text-slate-300 hover:text-red-500 p-1 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button onClick={startBatchAnalysis} disabled={analyzing || !files.some(f => f.status === 'pending')}
+                                            className="w-full mt-6 py-4 bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white rounded-2xl font-black transition-all shadow-lg active:scale-95">
+                                            {analyzing ? (
+                                                <span className="flex items-center justify-center gap-2 flex-wrap">
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                    <span className="text-sm">
+                                                        {lang === 'th' ? 'กำลังวิเคราะห์' : 'Analyzing'}{' '}
+                                                        {files.filter(f => f.status === 'completed' || f.status === 'error').length}/{files.length}
+                                                    </span>
+                                                    {typeof etaSec === 'number' && etaSec > 0 && (
+                                                        <span className="text-xs font-normal text-slate-300">
+                                                            · {lang === 'th' ? 'เหลือ ~' : 'ETA ~'}{etaSec}s
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            ) : t.process(files.filter(f => f.status === 'pending').length)}
+                                        </button>
+                                        {/* Clear All */}
+                                        {(files.length > 0 || results.length > 0) && (
+                                            <button
+                                                onClick={clearAll}
+                                                disabled={analyzing}
+                                                className="w-full mt-2 py-3 flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 disabled:opacity-40 text-red-600 border border-red-200 rounded-2xl font-black text-sm transition-all active:scale-95"
+                                            >
+                                                <RefreshCw className="w-4 h-4" /> {t.clearAll}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Estimation Summary */}
+                                <div className="lg:col-span-8 xl:col-span-9">
+                                    <div className="bg-white rounded-[2rem] p-8 shadow-xl border border-slate-100">
+                                        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+                                            <h2 className="text-xl font-black flex items-center gap-2">
+                                                <BarChart3 className="w-6 h-6 text-emerald-500" /> {t.estimationSummary}
+                                            </h2>
+                                            <div className="flex items-center gap-3 flex-wrap">
+                                                {/* V5.7: Global PB selector removed — Precision Base is now per-row only (PB selector under each CNC/Ea cell) */}
+                                                {matData.allNames.length > 0 && (
+                                                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl flex items-center gap-1 border border-emerald-200">
+                                                        <RefreshCw className="w-3 h-3" /> {t.materialsLoaded(matData.allNames.length)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full border-separate border-spacing-y-3">
+                                                <thead>
+                                                    <tr className="text-sm font-black text-slate-500 uppercase tracking-wider">
+                                                        <th className="px-3 py-2 text-left whitespace-nowrap">
+                                                            <div>{t.colPartName}</div>
+                                                            <div className="text-xs text-slate-400 tracking-normal font-normal">{t.colPartNoDwg}</div>
+                                                        </th>
+                                                        <th className="px-3 py-2 text-left whitespace-nowrap">
+                                                            <div>{t.colMaterial}</div>
+                                                            <div className="text-xs text-slate-400 tracking-normal font-normal">{t.colSizeMat}</div>
+                                                        </th>
+                                                        <th className="px-3 py-2 text-center whitespace-nowrap">{t.colQty}</th>
+                                                        <th className="px-3 py-2 text-right whitespace-nowrap">{t.colMaterialEa}</th>
+                                                        <th className="px-3 py-2 text-right whitespace-nowrap">{t.colCncEa}</th>
+                                                        <th className="px-3 py-2 text-right text-violet-600 whitespace-nowrap">
+                                                            <div>{t.colCoatingEa} <span className="text-xs text-violet-400 tracking-normal font-normal">{t.colCoatingUnit}</span></div>
+                                                        </th>
+                                                        <th className="px-3 py-2 text-right text-blue-600 whitespace-nowrap">{t.colPriceEa}</th>
+                                                        <th className="px-3 py-2 text-right whitespace-nowrap">{t.colTotal}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {results.map((res, i) => (
+                                                        <ResultRow
+                                                            key={res.fileId}
+                                                            res={res}
+                                                            matData={matData}
+                                                            startPrices={matData.startPrices}
+                                                            onUpdate={updateResult}
+                                                            lang={lang}
+                                                            Settings={Settings}
+                                                            Maximize2={Maximize2}
+                                                            ChevronDown={ChevronDown}
+                                                        />
+                                                    ))}
+                                                    {results.length === 0 && (
+                                                        <tr>
+                                                            <td colSpan="8" className="py-32 text-center text-slate-300 italic text-sm">
+                                                                <Calculator className="w-12 h-12 mx-auto mb-4 opacity-10" />
+                                                                {t.noResults}
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                    {results.length > 0 && (
+                                                        <tr>
+                                                            <td colSpan="8" className="px-4 py-3 text-right font-black text-slate-600 text-sm">{t.grandTotal}</td>
+                                                            <td className="px-4 py-3 text-right">
+                                                                <span className="text-lg font-black text-emerald-600">{grandTotal.toLocaleString('th', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                        <style>{`
+                            .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                            .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+                            .editable-cell { transition: background .15s; }
+                            .editable-cell:focus { outline: 2px solid #3b82f6; outline-offset: 1px; background: #eff6ff; border-radius: 6px; }
+                            select.editable-cell { cursor: pointer; }
+                        `}</style>
+
+                    </div>
+                );
+            };
+
+            // ─── MaterialCombobox — searchable + filterable dropdown ────────
+            const MaterialCombobox = ({ value, options, onChange, ChevronDown, lang }) => {
+                const t = TRANSLATIONS[lang] || TRANSLATIONS.th;
+                const [query,  setQuery]  = useState('');
+                const [open,   setOpen]   = useState(false);
+                const wrapRef = useRef(null);
+
+                // Close when clicking outside
+                useEffect(() => {
+                    const handler = (e) => {
+                        if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+                            setOpen(false);
+                            setQuery('');
+                        }
+                    };
+                    document.addEventListener('mousedown', handler);
+                    return () => document.removeEventListener('mousedown', handler);
+                }, []);
+
+                const filtered = query.trim() === ''
+                    ? options
+                    : options.filter(m => m.toLowerCase().includes(query.toLowerCase()));
+
+                const select = (m) => {
+                    onChange(m);
+                    setOpen(false);
+                    setQuery('');
+                };
+
+                return (
+                    <div ref={wrapRef} className="relative">
+                        {/* Input field */}
+                        <div className="flex items-center bg-blue-50 border border-blue-200 rounded-lg overflow-hidden hover:bg-blue-100 transition">
+                            <input
+                                type="text"
+                                value={open ? query : value}
+                                placeholder={open ? t.searchPlaceholder(options.length) : value}
+                                onFocus={() => { setOpen(true); setQuery(''); }}
+                                onChange={(e) => setQuery(e.target.value)}
+                                className="w-full text-xs font-bold text-blue-700 bg-transparent px-2 py-1 outline-none placeholder:text-blue-400 placeholder:font-normal"
+                            />
+                            <button
+                                type="button"
+                                onMouseDown={(e) => { e.preventDefault(); setOpen(o => !o); if (!open) setQuery(''); }}
+                                className="px-1.5 text-blue-400 hover:text-blue-600"
+                            >
+                                <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+                            </button>
+                        </div>
+
+                        {/* Dropdown list */}
+                        {open && (
+                            <div className="absolute z-50 mt-1 w-full min-w-[180px] bg-white border border-blue-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
+                                {filtered.length === 0 ? (
+                                    <div className="px-3 py-2 text-[11px] text-slate-400 italic">{t.notFound(query)}</div>
+                                ) : filtered.map(m => (
+                                    <div
+                                        key={m}
+                                        onMouseDown={(e) => { e.preventDefault(); select(m); }}
+                                        className={`px-3 py-1.5 text-xs cursor-pointer transition-colors
+                                            ${m === value
+                                                ? 'bg-blue-600 text-white font-bold'
+                                                : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'}`}
+                                    >
+                                        {query.trim() ? (
+                                            // Highlight matching part
+                                            <HighlightMatch text={m} query={query} />
+                                        ) : m}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            // Highlight matched text in dropdown items
+            const HighlightMatch = ({ text, query }) => {
+                if (!query) return <span>{text}</span>;
+                const idx = text.toLowerCase().indexOf(query.toLowerCase());
+                if (idx === -1) return <span>{text}</span>;
+                return (
+                    <span>
+                        {text.slice(0, idx)}
+                        <mark className="bg-yellow-200 text-blue-800 rounded-sm">{text.slice(idx, idx + query.length)}</mark>
+                        {text.slice(idx + query.length)}
+                    </span>
+                );
+            };
+
+            // ─── ResultRow ───────────────────────────────────────────────────
+            const ResultRow = ({ res, matData, startPrices, onUpdate, lang, Settings, Maximize2, ChevronDown }) => {
+                const t = TRANSLATIONS[lang] || TRANSLATIONS.th;
+                const fmt = (n, d = 2) => isNaN(n) ? '-' : Number(n).toLocaleString('th', { minimumFractionDigits: 0, maximumFractionDigits: d });
+
+                const handleMaterial     = (val) => onUpdate(res.fileId, 'material', val);
+                const handleSizeMat      = (e)   => onUpdate(res.fileId, 'sizeMat',  e.target.value, { sizeMatEdited: true });
+                const handleQty          = (e)   => {
+                    const v = parseInt(e.target.value, 10);
+                    if (!isNaN(v) && v > 0) onUpdate(res.fileId, 'qty', v);
+                };
+                const handleRemovalRatio = (e)   => {
+                    const pct = parseFloat(e.target.value);
+                    if (!isNaN(pct) && pct >= 1 && pct <= 99)
+                        onUpdate(res.fileId, 'removalRatio', pct / 100);
+                };
+                const handleCoating      = (e)   => onUpdate(res.fileId, 'coating', e.target.value);
+
+                const hasSystemPrice  = res.fromSystem === true;
+                const priceUnit       = matData.prices[res.material]?.unit || 'kg';
+                const sp              = startPrices || {};
+                const coatingPrices   = matData.coatingPrices || {};
+                const coatingOptions  = matData.coatingOptions || BASE_COATING_OPTIONS;
+
+                return (
+                    <React.Fragment>
+                        <tr className="bg-white shadow-sm hover:shadow-md transition-all">
+                            {/* Part Name */}
+                            <td className="px-4 py-4 rounded-l-2xl font-black text-slate-800 border-y border-l border-slate-100 text-sm">
+                                <div className="flex flex-col gap-1">
+                                    <span>{res.partName}</span>
+                                    {(res.partNo || res.drawingNo) && (
+                                        <div className="text-[10px] text-slate-500 font-normal">
+                                            {res.partNo    && <span>No: {res.partNo}</span>}
+                                            {res.partNo && res.drawingNo && <span className="mx-1">|</span>}
+                                            {res.drawingNo && <span>Dwg: {res.drawingNo}</span>}
+                                        </div>
+                                    )}
+                                    {/* Engine badge — which AI analyzed this file */}
+                                    {res._engine && (
+                                        <span title={
+                                                res._engine === 'openrouter' ? `วิเคราะห์ด้วย OpenRouter${res._model ? ' (' + res._model + ')' : ''}` :
+                                                'วิเคราะห์ด้วย Gemini API'}
+                                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md w-fit
+                                                ${res._engine === 'openrouter'
+                                                    ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                                    : 'bg-blue-50 text-blue-500 border border-blue-100'}`}>
+                                            {res._engine === 'openrouter'
+                                                ? `🔀 OpenRouter${res._model ? ' (' + res._model + ')' : ''}`
+                                                : '☁️ Gemini'}
+                                        </span>
+                                    )}
+                                    {/* AI cost badge — token cost converted to THB */}
+                                    {typeof res._costThb === 'number' && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md w-fit bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                              title={`${res._tokensIn || 0} in / ${res._tokensOut || 0} out tokens — $${(res._costUsd || 0).toFixed(6)}`}>
+                                            {res._costThb === 0
+                                                ? '💰 ฟรี'
+                                                : `💰 ${res._costThb < 0.01 ? res._costThb.toFixed(4) : res._costThb.toFixed(2)} บาท`}
+                                        </span>
+                                    )}
+                                </div>
+                            </td>
+
+                            {/* Material + SizeMat — editable */}
+                            <td className="px-3 py-4 border-y border-slate-100 min-w-[140px] lg:min-w-[170px] xl:min-w-[190px]">
+                                <div className="flex flex-col gap-2">
+                                    {/* Searchable material combobox */}
+                                    <MaterialCombobox
+                                        value={res.material}
+                                        options={matData.allNames.length > 0 ? matData.allNames : [res.material]}
+                                        onChange={handleMaterial}
+                                        ChevronDown={ChevronDown}
+                                        lang={lang}
+                                    />
+                                    {/* Size Mat editable */}
+                                    <div className="flex items-center gap-1">
+                                        <Maximize2 className="w-3 h-3 flex-shrink-0 text-slate-400" />
+                                        <div className="relative w-full">
+                                            {!res.sizeMatEdited && res.sizeMat && (
+                                                <span
+                                                    title={t.aiEstTooltip}
+                                                    className="absolute -top-2.5 right-0 text-[8px] font-bold bg-amber-100 text-amber-700 border border-amber-300 rounded px-1 leading-4 cursor-help z-10 select-none whitespace-nowrap"
+                                                >
+                                                    {t.aiEstBadge}
+                                                </span>
+                                            )}
+                                            <input
+                                                type="text"
+                                                value={res.sizeMat}
+                                                onChange={handleSizeMat}
+                                                placeholder={t.sizeMatPlaceholder}
+                                                className={`editable-cell w-full text-[11px] font-bold rounded-md px-2 py-0.5 hover:bg-white transition ${
+                                                    !res.sizeMatEdited && res.sizeMat
+                                                        ? 'bg-amber-50 border border-amber-300'
+                                                        : 'bg-slate-50 border border-slate-200'
+                                                }`}
+                                            />
+                                        </div>
+                                    </div>
+                                    {/* Coating dropdown */}
+                                    <div className="flex items-center gap-1 mt-1">
+                                        <span className="text-[9px] text-slate-400 flex-shrink-0 w-3">🎨</span>
+                                        <select
+                                            value={res.coating || 'noOption'}
+                                            onChange={handleCoating}
+                                            className="editable-cell w-full text-[11px] font-bold bg-slate-50 border border-slate-200 rounded-md px-2 py-0.5 hover:bg-white transition text-slate-600"
+                                        >
+                                            <option value="noOption">{t.noCoating}</option>
+                                            {coatingOptions.map(o => (
+                                                <option key={o.key} value={o.key}>{o.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    {/* Removal Ratio — background only, not shown in UI */}
+                                </div>
+                            </td>
+
+                            {/* QTY — editable */}
+                            <td className="px-4 py-4 border-y border-slate-100 text-center">
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={res.qty}
+                                    onChange={handleQty}
+                                    className="editable-cell w-16 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 hover:bg-white transition"
+                                />
+                            </td>
+
+                            {/* Material/Ea. */}
+                            <td className="px-4 py-4 border-y border-slate-100 text-right font-bold text-slate-600 text-sm">
+                                {fmt(res.unitMaterial)}
+                                {res.matCapped ? (
+                                    <div className="text-[11px] text-orange-500 font-normal">{t.minPrice(fmt(sp.material))}</div>
+                                ) : hasSystemPrice ? (
+                                    <div className="text-[11px] text-emerald-500 font-normal">
+                                        {priceUnit === 'kg' && res.weightKg != null
+                                            ? `${res.weightKg.toFixed(3)} kg`
+                                            : priceUnit === 'mm2' ? t.calcFromArea : ''}
+                                        {' '}{t.systemLabel}
+                                    </div>
+                                ) : (
+                                    <div className="text-[11px] text-amber-500 font-normal">{t.aiVal}</div>
+                                )}
+                            </td>
+
+                            {/* CNC/Ea. (includes amortized setup) */}
+                            <td className="px-4 py-4 border-y border-slate-100 text-right font-bold text-slate-500 text-sm">
+                                {fmt(res.unitCnc)}
+                                {res.cncCapped ? (
+                                    <div className="text-[11px] text-orange-500 font-normal">{t.minPrice(fmt(sp.cnc))}</div>
+                                ) : res.cncFromSystem ? (
+                                    <div className="text-[11px] text-indigo-500 font-normal">{t.formulaLabel}</div>
+                                ) : (
+                                    <div className="text-[11px] text-amber-500 font-normal">{t.aiVal}</div>
+                                )}
+                                {/* CNC Setup amortized */}
+                                {res.unitSetup > 0 && (
+                                    <div className="text-[11px] text-violet-500 font-normal mt-0.5">
+                                        +Setup {fmt(res.setupTotal)}÷{res.qty} = {fmt(res.unitSetup)}
+                                    </div>
+                                )}
+                                {/* V5.7: per-row Precision Base override (font bumped for readability) */}
+                                <div className="mt-1.5 flex items-center gap-1 justify-end">
+                                    <span className="text-[11px] text-slate-500 uppercase tracking-wider font-bold">PB:</span>
+                                    <select
+                                        value={(typeof res.precisionBase === 'number' ? res.precisionBase : 1.0).toFixed(1)}
+                                        onChange={e => onUpdate(res.fileId, 'precisionBase', parseFloat(e.target.value), { precisionOverridden: true })}
+                                        title={res.precisionOverridden ? 'Per-row override (กำหนดเฉพาะแถวนี้)' : 'Default (ยังไม่ override)'}
+                                        className={`text-xs font-bold bg-transparent border border-slate-200 rounded px-1.5 py-0.5 outline-none cursor-pointer ${res.precisionOverridden ? 'text-indigo-700 bg-indigo-50 border-indigo-300' : 'text-slate-600'}`}
+                                    >
+                                        <option value="1.0">1 (×1.0)</option>
+                                        <option value="1.2">2 (×1.2)</option>
+                                        <option value="1.3">3 (×1.3)</option>
+                                        <option value="1.4">4 (×1.4)</option>
+                                        <option value="1.5">5 (×1.5)</option>
+                                        <option value="1.6">6 (×1.6)</option>
+                                        <option value="1.7">7 (×1.7)</option>
+                                        <option value="1.8">8 (×1.8)</option>
+                                        <option value="1.9">9 (×1.9)</option>
+                                        <option value="2.0">10 (×2.0)</option>
+                                        <option value="2.1">11 (×2.1)</option>
+                                        <option value="2.2">12 (×2.2)</option>
+                                        <option value="2.3">13 (×2.3)</option>
+                                        <option value="2.4">14 (×2.4)</option>
+                                        <option value="2.5">15 (×2.5)</option>
+                                        <option value="2.6">16 (×2.6)</option>
+                                        <option value="2.7">17 (×2.7)</option>
+                                        <option value="2.8">18 (×2.8)</option>
+                                        <option value="2.9">19 (×2.9)</option>
+                                        <option value="3.0">20 (×3.0)</option>
+                                    </select>
+                                </div>
+                            </td>
+
+                            {/* Coating/Ea. */}
+                            <td className="px-4 py-4 border-y border-slate-100 text-right font-bold text-violet-600 text-sm">
+                                {res.unitCoating > 0 ? (
+                                    <>
+                                        {fmt(res.unitCoating)}
+                                        <div className="text-[11px] text-violet-400 font-normal">
+                                            {res.coatingCalcDetail?.unit === 'sq.inch'
+                                                ? `${(res.coatingCalcDetail.areaSqIn || 0).toFixed(1)} in²`
+                                                : res.coatingCalcDetail?.unit === 'kg'
+                                                    ? `${(res.coatingCalcDetail.weightKg || 0).toFixed(3)} kg`
+                                                    : ''}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <span className="text-slate-300 font-normal text-[11px]">—</span>
+                                )}
+                            </td>
+
+                            {/* Price/Ea. */}
+                            <td className="px-4 py-4 border-y border-slate-100 text-right font-black text-blue-700 bg-blue-50/40 hover:bg-blue-50 transition text-sm">
+                                {fmt(res.priceEa)}
+                            </td>
+
+                            {/* Total */}
+                            <td className="px-4 py-4 rounded-r-2xl border-y border-r border-slate-100 text-right">
+                                <span className="text-base font-black text-emerald-600">{fmt(res.totalCost)}</span>
+                            </td>
+                        </tr>
+
+                        {/* Technical Notes row */}
+                        <tr>
+                            <td colSpan="8" className="px-4 pb-4">
+                                <div className="bg-slate-50/50 p-3 rounded-xl border border-slate-100 text-[11px] text-slate-500 italic flex gap-2">
+                                    <Settings className="w-3.5 h-3.5 mt-0.5 text-slate-400 flex-shrink-0" />
+                                    <span>
+                                        <b>{t.technicalNotesLabel}:</b>{' '}
+                                        {lang === 'th'
+                                            ? (res.technicalNotesTH || res.technicalNotes || '')
+                                            : (res.technicalNotesEN || res.technicalNotes || '')}
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    </React.Fragment>
+                );
+            };
+
+            // ─── StatusBadge (V5.11: with elapsed-time clock for processing files) ──
+            const StatusBadge = ({ status, lang, startedAt, elapsedMs }) => {
+                const t = TRANSLATIONS[lang] || TRANSLATIONS.th;
+                // Live ticker — re-render every 1s while in "processing" so the user
+                // sees the elapsed seconds counting up. No render when status changes.
+                const [, _tick] = useState(0);
+                useEffect(() => {
+                    if (status !== 'processing' || !startedAt) return;
+                    const id = setInterval(() => _tick(n => n + 1), 1000);
+                    return () => clearInterval(id);
+                }, [status, startedAt]);
+
+                const configs = {
+                    pending:    { label: t.statusPending,    color: 'bg-slate-200 text-slate-600' },
+                    processing: { label: t.statusProcessing, color: 'bg-blue-100 text-blue-600 animate-pulse' },
+                    completed:  { label: t.statusCompleted,  color: 'bg-emerald-100 text-emerald-600' },
+                    error:      { label: t.statusError,      color: 'bg-red-100 text-red-600' }
+                };
+                const c = configs[status] || configs.pending;
+
+                let suffix = '';
+                if (status === 'processing' && startedAt) {
+                    const sec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+                    suffix = ` · ${sec}s`;
+                } else if (status === 'completed' && typeof elapsedMs === 'number' && elapsedMs > 0) {
+                    // V5.12: <100ms strongly implies cache hit — flag visually
+                    suffix = elapsedMs < 100 ? ' · ⚡cached' : ` · ${(elapsedMs / 1000).toFixed(1)}s`;
+                }
+                return <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase mt-0.5 inline-block ${c.color}`}>{c.label}{suffix}</span>;
+            };
+
+            const root = createRoot(document.getElementById('root'));
+            root.render(<App />);
+        }
+    </script>
+</body>
+</html>

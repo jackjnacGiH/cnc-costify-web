@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activation – CNC Costify AI V5.13</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', 'Sarabun', sans-serif; background-color:#f0f4f8; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .lang-btn-active { background-color: #3b82f6; color: white; }
+  </style>
+  <script>
+    const strings = {
+      th: {
+        appTitleAddon: "Activation",
+        hardwareIdLabel: "Hardware ID",
+        hardwareIdHint: "ใช้ Hardware ID เพื่อขอไฟล์สิทธิ์การใช้งานจากผู้ดูแล",
+        licenseStatusLabel: "สถานะสิทธิ์การใช้งาน",
+        uploadLicenseLabel: "อัปโหลดไฟล์สิทธิ์การใช้งาน (.json/.dat)",
+        licenseTargetLabel: "ตำแหน่งติดตั้ง",
+        targetHelp: "เลือกตำแหน่งติดตั้งตามรูปแบบการใช้งานของคุณ",
+        copyIdBtn: "คัดลอก",
+        refreshLicenseBtn: "ตรวจสถานะ",
+        importLicenseBtn: "นำเข้าสิทธิ์การใช้งาน",
+        launchBtn: "เปิดโปรแกรม",
+        chooseFileBtn: "เลือกไฟล์",
+        noFileChosen: "ไม่ได้เลือกไฟล์ใด",
+        licenseTarget_userData: "โฟลเดอร์ผู้ใช้ (Roaming)",
+        licenseTarget_programData: "โฟลเดอร์ระบบ (ProgramData)",
+        licenseTarget_cwd: "โฟลเดอร์ปัจจุบัน (Dev)",
+        // statuses
+        licenseStatus_active: "ใช้งานได้",
+        licenseStatus_grace: "ช่วงผ่อนผัน",
+        licenseStatus_revoked: "ถูกเพิกถอน",
+        licenseStatus_mismatch: "Hardware ไม่ตรง",
+        licenseStatus_signatureInvalid: "ลายเซ็นไม่ถูกต้อง",
+        licenseStatus_invalidTime: "เวลาไม่ถูกต้อง",
+        licenseStatus_notBefore: "ยังไม่ถึงวันเริ่ม",
+        licenseStatus_expired: "หมดอายุ",
+        licenseStatus_notFound: "ไม่พบไฟล์",
+        licenseStatus_hwUnavailable: "ไม่พบ Hardware ID",
+        licenseStatus_offline: "Offline",
+        // remaining info
+        remainingDaysLabel: "วันคงเหลือ",
+        remainingUntilLabel: "ใช้ได้ถึง",
+        // messages
+        licenseImportSuccess: (p) => `นำเข้าสำเร็จ: ${p}`,
+        licenseImportError_invalidFile: "ไฟล์สิทธิ์การใช้งานไม่ถูกต้อง",
+        licenseImportError_readFile: "เกิดข้อผิดพลาดขณะนำเข้า",
+        // contact footer
+        contactFooterTitle: "ต้องการ License Key? กรุณาแจ้ง Hardware ID นี้ พร้อมชื่อผู้ติดต่อ/บริษัท มาที่:",
+        contactPhone: "📞 โทร: 08 1144 2000 (สำหรับขอ License)",
+        contactEmail: "📧 อีเมล: info@cnccostify.cloud",
+        contactWebsite: "🌐 เว็บไซต์: www.cnccostify.cloud",
+        contactAddress: "ที่ตั้งบริษัท: บริษัท เจ แนค (ประเทศไทย) จำกัด เลขที่ 84 หมู่ 2 ซ.สุนทรวิภาค ถ.บางพลี - ตำหรุ ต.แพรกษาใหม่ อ.เมือง จ.สมุทรปราการ 10280"
+      },
+      en: {
+        appTitleAddon: "Activation",
+        hardwareIdLabel: "Hardware ID",
+        hardwareIdHint: "Use Hardware ID to request a license file",
+        licenseStatusLabel: "License Status",
+        uploadLicenseLabel: "Upload License File (.json/.dat)",
+        licenseTargetLabel: "Install Location",
+        targetHelp: "Choose install target based on your usage",
+        copyIdBtn: "Copy",
+        refreshLicenseBtn: "Check Status",
+        importLicenseBtn: "Import License",
+        launchBtn: "Open App",
+        chooseFileBtn: "Choose File",
+        noFileChosen: "No file chosen",
+        licenseTarget_userData: "User folder (Roaming)",
+        licenseTarget_programData: "System folder (ProgramData)",
+        licenseTarget_cwd: "Current folder (Dev)",
+        // statuses
+        licenseStatus_active: "Active",
+        licenseStatus_grace: "Grace Period",
+        licenseStatus_revoked: "Revoked",
+        licenseStatus_mismatch: "Hardware Mismatch",
+        licenseStatus_signatureInvalid: "Invalid Signature",
+        licenseStatus_invalidTime: "Invalid Time",
+        licenseStatus_notBefore: "Not Before",
+        licenseStatus_expired: "Expired",
+        licenseStatus_notFound: "File Not Found",
+        licenseStatus_hwUnavailable: "Hardware ID Unavailable",
+        licenseStatus_offline: "Offline",
+        // remaining info
+        remainingDaysLabel: "Days left",
+        remainingUntilLabel: "Valid until",
+        // messages
+        licenseImportSuccess: (p) => `License imported: ${p}`,
+        licenseImportError_invalidFile: "Invalid license file",
+        licenseImportError_readFile: "Import error",
+        // contact footer
+        contactFooterTitle: "Need a License Key? Please send this Hardware ID with contact/company name to:",
+        contactPhone: "📞 Phone: 08 1144 2000 (for license requests)",
+        contactEmail: "📧 Email: info@cnccostify.cloud",
+        contactWebsite: "🌐 Website: www.cnccostify.cloud",
+        contactAddress: "Company address: JNAC (THAILAND) CO., LTD. 8 4 Moo.2 Soi Sunthornviphakh, Bangplee-Tamru Rd., Prakasamai, Muang, Samutprakarn 10280"
+      }
+    };
+
+    // ─── Web Login labels (Phase B) ─────────────────────────────────────
+    const webAuthStrings = {
+      th: {
+        webLoginTitle: '🌐 เข้าสู่ระบบด้วยบัญชีเว็บไซต์',
+        webLoginSubtitle: 'ฟรี 3 ไฟล์/วัน หรือ Subscribe เพื่อใช้งานไม่จำกัด',
+        webSignInBtn: 'เข้าสู่ระบบด้วยเว็บไซต์',
+        webSignInBusy: 'กำลังเปิดเบราว์เซอร์...',
+        webSignInPending: 'รอการยืนยันในเบราว์เซอร์...',
+        webSignInCancelBtn: 'ยกเลิก',
+        webSignInOk: '✅ เข้าสู่ระบบสำเร็จ',
+        webSignedInAs: 'เข้าสู่ระบบเป็น',
+        webPlanLabel: 'แพ็กเกจ',
+        webSignOutBtn: 'ออกจากระบบ',
+        webRegisterLink: 'ยังไม่มีบัญชี? สมัครฟรี →',
+        webErrTimeout: 'หมดเวลา — กรุณาลองอีกครั้ง',
+        webErrCancelled: 'ยกเลิกแล้ว',
+        webErrUnknown: 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ',
+        webDividerOr: 'หรือ',
+        webOfflineTitle: '📄 ใช้ไฟล์ License (Offline)',
+      },
+      en: {
+        webLoginTitle: '🌐 Sign in with Web Account',
+        webLoginSubtitle: 'Free 3 files/day or Subscribe for unlimited use',
+        webSignInBtn: 'Sign in via Website',
+        webSignInBusy: 'Opening browser...',
+        webSignInPending: 'Waiting for confirmation in browser...',
+        webSignInCancelBtn: 'Cancel',
+        webSignInOk: '✅ Signed in successfully',
+        webSignedInAs: 'Signed in as',
+        webPlanLabel: 'Plan',
+        webSignOutBtn: 'Sign out',
+        webRegisterLink: "Don't have an account? Sign up free →",
+        webErrTimeout: 'Timed out — please try again',
+        webErrCancelled: 'Cancelled',
+        webErrUnknown: 'Sign-in error',
+        webDividerOr: 'or',
+        webOfflineTitle: '📄 Use License File (Offline)',
+      },
+    };
+
+    let currentLang = 'th';
+
+    function applyStrings() {
+      const dict = strings[currentLang];
+      const wdict = webAuthStrings[currentLang];
+      document.querySelectorAll('[data-lang-key]').forEach(el => {
+        const key = el.getAttribute('data-lang-key');
+        const val = dict[key] ?? wdict[key];
+        if (typeof val === 'string') el.textContent = val;
+      });
+      // Update select option labels
+      const optUser = document.getElementById('optUserData');
+      const optProg = document.getElementById('optProgramData');
+      const optCwd = document.getElementById('optCwd');
+      if (optUser) optUser.textContent = strings[currentLang].licenseTarget_userData;
+      if (optProg) optProg.textContent = strings[currentLang].licenseTarget_programData;
+      if (optCwd) optCwd.textContent = strings[currentLang].licenseTarget_cwd;
+      // Update custom file input texts
+      const fileBtn = document.getElementById('licenseFileBtn');
+      const fileName = document.getElementById('licenseFileName');
+      if (fileBtn) fileBtn.textContent = strings[currentLang].chooseFileBtn;
+      if (fileName && !(fileName.dataset.hasFile === 'true')) {
+        fileName.textContent = strings[currentLang].noFileChosen;
+      }
+      // Update remaining labels
+      const remDaysLbl = document.getElementById('remainingDaysLabel');
+      const remUntilLbl = document.getElementById('remainingUntilLabel');
+      if (remDaysLbl) remDaysLbl.textContent = strings[currentLang].remainingDaysLabel;
+      if (remUntilLbl) remUntilLbl.textContent = strings[currentLang].remainingUntilLabel;
+    }
+
+    async function init() {
+      applyStrings();
+      const langThBtn = document.getElementById('lang-th');
+      const langEnBtn = document.getElementById('lang-en');
+      function setLang(lang) {
+        currentLang = lang;
+        langThBtn.classList.toggle('lang-btn-active', lang === 'th');
+        langEnBtn.classList.toggle('lang-btn-active', lang === 'en');
+        applyStrings();
+      }
+      langThBtn?.addEventListener('click', () => setLang('th'));
+      langEnBtn?.addEventListener('click', () => setLang('en'));
+
+      const idEl = document.getElementById('hwid');
+      const copyBtn = document.getElementById('copyBtn');
+      const statusEl = document.getElementById('status');
+      const importBtn = document.getElementById('importBtn');
+      const launchBtn = document.getElementById('launchBtn');
+      const fileInput = document.getElementById('licenseFile');
+      const fileBtn = document.getElementById('licenseFileBtn');
+      const fileName = document.getElementById('licenseFileName');
+      const targetSel = document.getElementById('targetSel');
+      const msgEl = document.getElementById('msg');
+
+      // Load hardware id via Electron IPC; fallback to "-"
+      try {
+        if (window.api && window.api.computeHardwareId) {
+          const r = await window.api.computeHardwareId();
+          idEl.textContent = (r && r.ok && r.hardware_id) ? r.hardware_id : '-';
+        } else {
+          idEl.textContent = '-';
+        }
+      } catch (e) {
+        idEl.textContent = '-';
+      }
+
+      async function refreshStatus() {
+        const checkBtn = document.getElementById('checkBtn');
+        const originalText = checkBtn ? checkBtn.textContent : '';
+        if (checkBtn) { checkBtn.disabled = true; checkBtn.textContent = (currentLang === 'th') ? 'กำลังตรวจ…' : 'Checking…'; }
+        try {
+          if (window.api && window.api.validateLicense) {
+            const r = await window.api.validateLicense();
+            if (r && r.ok) {
+              if (r.status === 'active') { statusEl.textContent = strings[currentLang].licenseStatus_active; statusEl.className = 'px-2 py-0.5 text-xs rounded bg-green-100 text-green-800'; launchBtn.disabled = false; }
+              else if (r.status === 'grace') { statusEl.textContent = strings[currentLang].licenseStatus_grace; statusEl.className = 'px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800'; launchBtn.disabled = false; }
+              else { statusEl.textContent = '-'; statusEl.className = 'badge'; launchBtn.disabled = true; }
+              // Update remaining days and until date
+              const daysEl = document.getElementById('licenseDaysLeft');
+              const untilEl = document.getElementById('licenseUntil');
+              const toDateStr = (iso) => {
+                try { return iso ? new Date(iso).toLocaleDateString(currentLang === 'th' ? 'th-TH' : 'en-US') : '-'; } catch { return '-'; }
+              };
+              if (daysEl) daysEl.textContent = (typeof r.days_left === 'number') ? String(r.days_left) : '-';
+              if (untilEl) untilEl.textContent = toDateStr(r.until || r.expires_at);
+            } else {
+              const err = (r && r.error) ? String(r.error).toLowerCase() : '';
+              let txt = '-';
+              if (err.includes('revoked')) txt = strings[currentLang].licenseStatus_revoked;
+              else if (err.includes('hardware mismatch')) txt = strings[currentLang].licenseStatus_mismatch;
+              else if (err.includes('signature')) txt = strings[currentLang].licenseStatus_signatureInvalid;
+              else if (err.includes('invalid time')) txt = strings[currentLang].licenseStatus_invalidTime;
+              else if (err.includes('not before')) txt = strings[currentLang].licenseStatus_notBefore;
+              else if (err.includes('expired')) txt = strings[currentLang].licenseStatus_expired;
+              else if (err.includes('license.dat not found')) txt = strings[currentLang].licenseStatus_notFound;
+              else if (err.includes('hardware id unavailable')) txt = strings[currentLang].licenseStatus_hwUnavailable;
+              statusEl.textContent = txt; statusEl.className = 'px-2 py-0.5 text-xs rounded bg-red-100 text-red-800'; launchBtn.disabled = true;
+              const daysEl = document.getElementById('licenseDaysLeft');
+              const untilEl = document.getElementById('licenseUntil');
+              if (daysEl) daysEl.textContent = '-';
+              if (untilEl) untilEl.textContent = '-';
+            }
+          }
+          // Update displayed license path
+          if (window.api && window.api.getLicensePath) {
+            const p = await window.api.getLicensePath();
+            const pathEl = document.getElementById('licensePath');
+            if (pathEl) {
+              if (p && p.ok && p.path) {
+                pathEl.textContent = p.path;
+              } else {
+                pathEl.textContent = '-';
+              }
+            }
+          }
+        } catch (_) {
+          statusEl.textContent = strings[currentLang].licenseStatus_offline; statusEl.className = 'px-2 py-0.5 text-xs rounded bg-red-100 text-red-800'; launchBtn.disabled = true;
+        } finally {
+          if (checkBtn) { checkBtn.disabled = false; checkBtn.textContent = originalText; }
+        }
+      }
+
+      await refreshStatus();
+
+      copyBtn.addEventListener('click', async () => {
+        const text = idEl.innerText || idEl.textContent || '';
+        if (!text || text.trim() === '-' || text.trim() === '') return;
+        
+        try {
+          if (window.api && window.api.copyToClipboard) {
+            await window.api.copyToClipboard(text.trim());
+          } else if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text.trim());
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = text.trim();
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          
+          // Visual feedback
+          const original = strings[currentLang].copyIdBtn;
+          copyBtn.textContent = (currentLang === 'th') ? 'คัดลอกสำเร็จ' : 'Copied!';
+          copyBtn.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'text-gray-900', 'border-gray-300');
+          copyBtn.classList.add('bg-green-500', 'hover:bg-green-600', 'text-white', 'border-green-600');
+          
+          setTimeout(() => { 
+            copyBtn.textContent = original; 
+            copyBtn.classList.add('bg-gray-200', 'hover:bg-gray-300', 'text-gray-900');
+            copyBtn.classList.remove('bg-green-500', 'hover:bg-green-600', 'text-white', 'border-green-600');
+          }, 1500);
+          
+        } catch (e) {
+          // Ignore
+        }
+      });
+
+      document.getElementById('checkBtn')?.addEventListener('click', refreshStatus);
+
+      // Custom file input handlers
+      fileBtn?.addEventListener('click', () => fileInput?.click());
+      fileInput?.addEventListener('change', () => {
+        const f = fileInput.files && fileInput.files[0];
+        if (f) {
+          if (fileName) {
+            fileName.textContent = f.name;
+            fileName.dataset.hasFile = 'true';
+          }
+        } else {
+          if (fileName) {
+            fileName.textContent = strings[currentLang].noFileChosen;
+            fileName.dataset.hasFile = 'false';
+          }
+        }
+      });
+
+      importBtn.addEventListener('click', async () => {
+        msgEl.textContent = '';
+        try {
+          const f = fileInput.files && fileInput.files[0];
+          if (!f) { msgEl.textContent = strings[currentLang].licenseImportError_invalidFile; return; }
+          const text = await f.text();
+          let json = null;
+          try { json = JSON.parse(text); } catch (_) { msgEl.textContent = strings[currentLang].licenseImportError_invalidFile; return; }
+          const target = targetSel.value || 'userData';
+          if (window.api && window.api.importLicense) {
+            const r = await window.api.importLicense(json, target);
+            if (r && r.ok) { msgEl.textContent = strings[currentLang].licenseImportSuccess(r.path); await refreshStatus(); }
+            else { msgEl.textContent = strings[currentLang].licenseImportError_readFile; }
+          }
+        } catch (e) { msgEl.textContent = strings[currentLang].licenseImportError_readFile; }
+      });
+
+      launchBtn.addEventListener('click', async () => {
+        if (window.api && window.api.launchMainWindow) {
+          const r = await window.api.launchMainWindow();
+          if (!r || !r.ok) {
+            // stay on activation
+          }
+        }
+      });
+
+      // ─── Web Login wiring (Phase B) ───────────────────────────────────
+      const webSignInBtn = document.getElementById('webSignInBtn');
+      const webSignInCancelBtn = document.getElementById('webSignInCancelBtn');
+      const webSignOutBtn = document.getElementById('webSignOutBtn');
+      const webSignInStatus = document.getElementById('webSignInStatus');
+      const webSignedOut = document.getElementById('webSignedOut');
+      const webSignedIn = document.getElementById('webSignedIn');
+      const webUserName = document.getElementById('webUserName');
+      const webUserEmail = document.getElementById('webUserEmail');
+      const webPlanBadge = document.getElementById('webPlanBadge');
+      const webQuotaLine = document.getElementById('webQuotaLine');
+      const webRegisterLink = document.getElementById('webRegisterLink');
+
+      function setSignedInUI(user, quota) {
+        webSignedOut.classList.add('hidden');
+        webSignedIn.classList.remove('hidden');
+        webUserName.textContent = user?.name || user?.email || '—';
+        webUserEmail.textContent = user?.email || '—';
+        const plan = (user?.plan || 'free').toLowerCase();
+        webPlanBadge.textContent = plan.toUpperCase();
+        webPlanBadge.className = 'text-xs font-bold px-2 py-0.5 rounded-full ' +
+          (plan === 'free' ? 'bg-slate-100 text-slate-700' :
+           plan === 'monthly' ? 'bg-blue-100 text-blue-700' :
+           plan === 'yearly' ? 'bg-purple-100 text-purple-700' :
+           'bg-amber-100 text-amber-800');
+        if (quota) {
+          if (quota.limit === null) {
+            webQuotaLine.textContent = (currentLang === 'th' ? 'ใช้งาน: ไม่จำกัด' : 'Usage: Unlimited');
+          } else {
+            webQuotaLine.textContent = (currentLang === 'th'
+              ? `วันนี้ใช้ไป ${quota.used}/${quota.limit} ไฟล์ (เหลือ ${quota.remaining})`
+              : `Today: ${quota.used}/${quota.limit} files (${quota.remaining} left)`);
+          }
+        }
+        // Web sign-in counts as valid auth → enable launch
+        if (launchBtn) launchBtn.disabled = false;
+      }
+
+      function setSignedOutUI() {
+        webSignedOut.classList.remove('hidden');
+        webSignedIn.classList.add('hidden');
+        webSignInStatus.classList.add('hidden');
+        webSignInCancelBtn.classList.add('hidden');
+        webSignInBtn.disabled = false;
+      }
+
+      // Restore existing session (if any)
+      async function restoreWebSession() {
+        try {
+          if (!window.webAuth) return;
+          const sess = await window.webAuth.getSession();
+          if (sess && sess.ok && sess.session && sess.session.token) {
+            // Optimistic UI from cached session
+            setSignedInUI(sess.session.user || {}, null);
+            // Refresh from server (also detects if token was revoked)
+            const me = await window.webAuth.me();
+            if (me && me.ok) {
+              setSignedInUI(me.user, me.quota);
+            } else if (me && me.revoked) {
+              await window.webAuth.signOut();
+              setSignedOutUI();
+            }
+          }
+        } catch (_) {}
+      }
+      restoreWebSession();
+
+      // Listen for sign-in progress events from main
+      if (window.webAuth?.onStatus) {
+        window.webAuth.onStatus(async (payload) => {
+          if (!payload) return;
+          if (payload.status === 'pending') {
+            webSignInStatus.classList.remove('hidden');
+            webSignInStatus.textContent = webAuthStrings[currentLang].webSignInPending;
+            webSignInCancelBtn.classList.remove('hidden');
+            webSignInBtn.disabled = true;
+          } else if (payload.status === 'authorized') {
+            webSignInStatus.textContent = webAuthStrings[currentLang].webSignInOk;
+            webSignInCancelBtn.classList.add('hidden');
+            webSignInBtn.disabled = false;
+            // Fetch fresh me() to get plan + quota
+            const me = await window.webAuth.me();
+            if (me && me.ok) setSignedInUI(me.user, me.quota);
+            else setSignedInUI(payload.user || {}, null);
+          } else if (payload.status === 'cancelled') {
+            webSignInStatus.textContent = webAuthStrings[currentLang].webErrCancelled;
+            webSignInCancelBtn.classList.add('hidden');
+            webSignInBtn.disabled = false;
+          } else if (payload.status === 'timeout') {
+            webSignInStatus.textContent = webAuthStrings[currentLang].webErrTimeout;
+            webSignInCancelBtn.classList.add('hidden');
+            webSignInBtn.disabled = false;
+          } else {
+            webSignInStatus.textContent = webAuthStrings[currentLang].webErrUnknown +
+              (payload.error ? ` (${payload.error})` : '');
+            webSignInCancelBtn.classList.add('hidden');
+            webSignInBtn.disabled = false;
+          }
+        });
+      }
+
+      webSignInBtn?.addEventListener('click', async () => {
+        try {
+          if (!window.webAuth) return;
+          webSignInBtn.disabled = true;
+          webSignInStatus.classList.remove('hidden');
+          webSignInStatus.textContent = webAuthStrings[currentLang].webSignInBusy;
+          const r = await window.webAuth.signInStart(currentLang);
+          if (!r || !r.ok) {
+            webSignInStatus.textContent = webAuthStrings[currentLang].webErrUnknown +
+              (r?.error ? ` (${r.error})` : '');
+            webSignInBtn.disabled = false;
+          }
+          // Otherwise wait for onStatus events
+        } catch (e) {
+          webSignInStatus.textContent = webAuthStrings[currentLang].webErrUnknown;
+          webSignInBtn.disabled = false;
+        }
+      });
+
+      webSignInCancelBtn?.addEventListener('click', async () => {
+        try { await window.webAuth?.signInCancel(); } catch {}
+      });
+
+      webSignOutBtn?.addEventListener('click', async () => {
+        try { await window.webAuth?.signOut(); setSignedOutUI(); } catch {}
+      });
+
+      webRegisterLink?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        try { await window.webAuth?.openUrl('https://www.cnccostify.cloud/' + currentLang + '/signup'); } catch {}
+      });
+    }
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+  <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl border border-gray-200">
+    <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-3">
+      <div></div>
+      <div class="flex items-center space-x-4">
+        <h1 class="text-xl font-extrabold">
+          <span class="text-black">CNC</span>
+          <span class="text-sky-500">Costify</span>
+          <span class="text-gray-500">AI</span>
+          <span class="text-gray-400 text-sm" data-lang-key="appTitleAddon">Activation</span>
+        </h1>
+        <div class="flex border border-gray-300 rounded-md">
+          <button id="lang-th" class="lang-btn-active px-3 py-1 text-sm font-medium rounded-l-md">TH</button>
+          <button id="lang-en" class="px-3 py-1 text-sm font-medium rounded-r-md">EN</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <!-- ─── Web Login (Phase B — new option) ─── -->
+      <div id="webLoginCard" class="rounded-lg border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50 p-4">
+        <div class="flex items-start justify-between gap-3 mb-2">
+          <div>
+            <h2 class="text-base font-extrabold text-slate-900" data-lang-key="webLoginTitle">🌐 เข้าสู่ระบบด้วยบัญชีเว็บไซต์</h2>
+            <p class="text-xs text-slate-600 mt-0.5" data-lang-key="webLoginSubtitle">ฟรี 3 ไฟล์/วัน หรือ Subscribe เพื่อใช้งานไม่จำกัด</p>
+          </div>
+        </div>
+
+        <!-- Signed-out state -->
+        <div id="webSignedOut" class="mt-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="webSignInBtn" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-sm rounded-md shadow" data-lang-key="webSignInBtn">เข้าสู่ระบบด้วยเว็บไซต์</button>
+            <a id="webRegisterLink" href="#" class="text-xs text-blue-700 hover:underline" data-lang-key="webRegisterLink">ยังไม่มีบัญชี? สมัครฟรี →</a>
+          </div>
+          <div id="webSignInStatus" class="mt-2 text-xs text-slate-600 hidden"></div>
+          <button id="webSignInCancelBtn" class="mt-2 text-xs text-rose-600 underline hidden" data-lang-key="webSignInCancelBtn">ยกเลิก</button>
+        </div>
+
+        <!-- Signed-in state -->
+        <div id="webSignedIn" class="mt-3 hidden">
+          <div class="bg-white rounded-md p-3 border border-slate-200">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="min-w-0">
+                <div class="text-xs text-slate-500" data-lang-key="webSignedInAs">เข้าสู่ระบบเป็น</div>
+                <div id="webUserName" class="font-bold text-slate-900 text-sm truncate">—</div>
+                <div id="webUserEmail" class="text-xs text-slate-500 truncate">—</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="webPlanBadge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">FREE</span>
+                <button id="webSignOutBtn" class="text-xs text-slate-600 hover:text-rose-600 underline" data-lang-key="webSignOutBtn">ออกจากระบบ</button>
+              </div>
+            </div>
+            <div id="webQuotaLine" class="mt-2 text-xs text-slate-600"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="flex items-center gap-3">
+        <div class="flex-1 h-px bg-slate-200"></div>
+        <span class="text-[10px] text-slate-400 uppercase tracking-wider" data-lang-key="webDividerOr">or</span>
+        <div class="flex-1 h-px bg-slate-200"></div>
+      </div>
+
+      <!-- ─── Existing offline-license section ─── -->
+      <h2 class="text-sm font-bold text-slate-700" data-lang-key="webOfflineTitle">📄 ใช้ไฟล์ License (Offline)</h2>
+
+      <div>
+        <label class="text-sm font-medium text-gray-700" data-lang-key="hardwareIdLabel">Hardware ID</label>
+        <div class="flex items-center gap-2 mt-1">
+          <div class="mono text-xs px-2 py-1 rounded bg-gray-100 border border-gray-200 flex-1 break-all overflow-hidden" id="hwid" style="word-break: break-all; white-space: normal;">-</div>
+          <button class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm rounded-md border shrink-0 whitespace-nowrap" id="copyBtn" style="white-space: nowrap; min-width: 80px; flex-shrink: 0;" data-lang-key="copyIdBtn">คัดลอก</button>
+        </div>
+        <p class="mt-1 text-xs text-gray-500" data-lang-key="hardwareIdHint">ใช้ Hardware ID เพื่อขอไฟล์สิทธิ์การใช้งานจากผู้ดูแล</p>
+      </div>
+
+      <div>
+        <label class="text-sm font-medium text-gray-700" data-lang-key="licenseStatusLabel">สถานะสิทธิ์การใช้งาน</label>
+        <div class="flex items-center gap-2 mt-1">
+          <span id="status" class="px-2 py-0.5 text-xs rounded bg-gray-200 text-gray-800">-</span>
+          <button class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm rounded-md border" id="checkBtn" data-lang-key="refreshLicenseBtn">ตรวจสถานะ</button>
+        </div>
+        <p class="mt-1 text-xs text-gray-500">ไฟล์ที่ใช้: <span id="licensePath" class="mono">-</span></p>
+        <p class="mt-1 text-xs text-gray-500">
+          <span id="remainingDaysLabel" data-lang-key="remainingDaysLabel">วันคงเหลือ</span>: 
+          <span id="licenseDaysLeft">-</span>
+          &nbsp;|&nbsp;
+          <span id="remainingUntilLabel" data-lang-key="remainingUntilLabel">ใช้ได้ถึง</span>: 
+          <span id="licenseUntil">-</span>
+        </p>
+      </div>
+
+      <div>
+        <label class="text-sm font-medium text-gray-700" data-lang-key="uploadLicenseLabel">อัปโหลดไฟล์สิทธิ์การใช้งาน (.json/.dat)</label>
+        <input type="file" id="licenseFile" accept=".json,.dat" class="hidden" />
+        <div class="mt-1 w-full px-2 py-2 border border-gray-300 rounded-md text-sm flex items-center justify-between">
+          <button id="licenseFileBtn" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm rounded-md border" data-lang-key="chooseFileBtn">เลือกไฟล์</button>
+          <span id="licenseFileName" class="text-gray-500 ml-3" data-has-file="false">ไม่ได้เลือกไฟล์ใด</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-sm font-medium text-gray-700" data-lang-key="licenseTargetLabel">ตำแหน่งติดตั้ง</label>
+        <select id="targetSel" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+          <option id="optUserData" value="userData">โฟลเดอร์ผู้ใช้ (Roaming)</option>
+          <option id="optProgramData" value="programData">โฟลเดอร์ระบบ (ProgramData)</option>
+          <option id="optCwd" value="cwd">โฟลเดอร์ปัจจุบัน (Dev)</option>
+        </select>
+        <p class="mt-1 text-xs text-gray-500" data-lang-key="targetHelp">เลือกตำแหน่งติดตั้งตามรูปแบบการใช้งานของคุณ</p>
+      </div>
+
+      <div class="flex items-center gap-3 justify-end">
+        <span class="text-sm text-gray-500" id="msg"></span>
+        <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-md shadow" id="importBtn" data-lang-key="importLicenseBtn">นำเข้าสิทธิ์การใช้งาน</button>
+        <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold text-sm rounded-md border" id="launchBtn" disabled data-lang-key="launchBtn">เปิดโปรแกรม</button>
+      </div>
+
+      <!-- Contact footer block -->
+      <div class="mt-6 border-t border-gray-200 pt-4 text-xs text-gray-600 space-y-1">
+        <p data-lang-key="contactFooterTitle">ต้องการ License Key? กรุณาแจ้ง Hardware ID นี้ พร้อมชื่อผู้ติดต่อ/บริษัท มาที่:</p>
+        <p data-lang-key="contactPhone">📞 โทร: 08 1144 2000 (สำหรับขอ License)</p>
+        <p data-lang-key="contactEmail">📧 อีเมล: info@cnccostify.cloud</p>
+        <p data-lang-key="contactWebsite">🌐 เว็บไซต์: www.cnccostify.cloud</p>
+        <p data-lang-key="contactAddress">ที่ตั้งบริษัท: JNAC (THAILAND) CO.,LTD. 8 4 Moo.2 Soi.Sunthornviphakh, Bangplee-tamru Rd., Prakasamai, Muang, Samutprakarn 10280</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,391 @@
+{
+  "Brand": {
+    "name": "CNC Costify AI",
+    "version": "V5.13",
+    "tagline": "Calculate CNC pricing with AI in 5 seconds"
+  },
+  "Nav": {
+    "home": "Home",
+    "features": "Features",
+    "pricing": "Pricing",
+    "docs": "Docs",
+    "download": "Download",
+    "contact": "Contact",
+    "about": "About",
+    "login": "Sign in",
+    "signup": "Sign up free",
+    "tryFree": "Try Free"
+  },
+  "Hero": {
+    "badge": "🎉 Launch Promotion — 50-70% off all plans",
+    "headline": "Calculate CNC pricing with AI",
+    "headlineHighlight": "in 5 seconds",
+    "subheadline": "Auto-analyze STEP / PDF / JPG drawings with AI, 100+ material database, and instant Excel export",
+    "ctaPrimary": "Try Free",
+    "ctaSecondary": "View Pricing",
+    "stats": {
+      "files": "Files Analyzed",
+      "materials": "Materials in DB",
+      "speed": "Average Speed",
+      "speedValue": "5s/file"
+    }
+  },
+  "Pain": {
+    "title": "Sound familiar?",
+    "subtitle": "Common headaches every CNC shop deals with when quoting",
+    "items": {
+      "slow": {
+        "title": "Quoting takes hours",
+        "desc": "1 quote means measuring volume, finding material, calculating CNC time, adding coating — 1-2 hr per part"
+      },
+      "nostandard": {
+        "title": "Inconsistent pricing",
+        "desc": "Each estimator does it differently — some forget setup, some miss coating → margin leaks"
+      },
+      "supplier": {
+        "title": "Calling suppliers for material prices",
+        "desc": "Open the spreadsheet, call vendors, wait for callbacks — hours wasted just on raw-material rates"
+      },
+      "latenight": {
+        "title": "Working late to meet quote deadlines",
+        "desc": "Customer sends drawings Friday afternoon, wants pricing Monday → your team works nights & weekends"
+      },
+      "office": {
+        "title": "Stuck waiting for office hours",
+        "desc": "Customer emails a drawing at 11 PM — you can't respond because you have no material database or AI tools"
+      },
+      "lostdeal": {
+        "title": "Lost deals from slow replies",
+        "desc": "Customer gets a quote from a competitor 2-3 days before yours → you've already lost the opportunity"
+      }
+    }
+  },
+  "Benefit": {
+    "title": "What you get with CNC Costify AI",
+    "subtitle": "Hours → Seconds. Manual → 90% AI-assisted.",
+    "items": {
+      "fast": {
+        "title": "Done in 5 seconds per file",
+        "desc": "From 1-2 hr → 5 seconds = 100× more quotes per day. Reply instantly, close deals fast."
+      },
+      "standard": {
+        "title": "One pricing standard across the team",
+        "desc": "Same formulas, material rates, coating rates for everyone. No more leaks from inconsistent calculations."
+      },
+      "noCall": {
+        "title": "No more calling suppliers",
+        "desc": "100+ materials with density & pricing built in — pick, click, get the number."
+      },
+      "always": {
+        "title": "Works 24/7 — no business-hour bottleneck",
+        "desc": "Customer sends a drawing at 2 AM? Drag, drop, AI replies. Send back the quote within 5 minutes."
+      },
+      "moreTime": {
+        "title": "Free up time for real work",
+        "desc": "Estimating that used to be 8 hr/day drops to 1-2 hr. Spend the rest on customers and process improvement."
+      },
+      "winMore": {
+        "title": "Win more deals",
+        "desc": "Faster than competitors = higher win rate. Customers will even pay a small premium for the instant response."
+      }
+    }
+  },
+  "Preview": {
+    "title": "See the actual interface",
+    "subtitle": "Designed to be dead simple — drag a file, pick the material, hit Calculate.",
+    "spot1": {
+      "badge": "STEP VOLUME",
+      "title": "Auto volume + stock size from STEP files",
+      "desc": "Drop a STEP/STP file — OpenCASCADE engine computes the real volume and stock-bar size in 5 seconds.",
+      "b1": "✓ Engineering-grade volume accuracy",
+      "b2": "✓ Auto stock size (rectangular / cylindrical)",
+      "b3": "✓ Material + CNC + Setup + Coating on one screen"
+    },
+    "spot2": {
+      "badge": "PDF/JPG AI BATCH",
+      "title": "Analyze multiple drawings at once",
+      "desc": "Batch-upload PDF/JPG drawings — AI extracts material, stock, coating, tolerance, holes for every file. Customer-ready summary table in seconds.",
+      "b1": "✓ Multi-AI: Gemini + OpenRouter (5 models) auto-fallback",
+      "b2": "✓ Reads stock size / notes / coating specs",
+      "b3": "✓ Instant Excel export — table ready for your customer"
+    },
+    "spot3": {
+      "badge": "FULL CUSTOMIZATION",
+      "title": "Tune pricing, materials, and coatings",
+      "desc": "100+ materials database (editable), CNC formulas per difficulty, Coating/Surface/Wire-Cut rates dialed to your shop.",
+      "b1": "✓ 4 difficulty multipliers (easy → very hard)",
+      "b2": "✓ Material DB 100+ — add/edit density and pricing",
+      "b3": "✓ Backup / Restore settings between machines"
+    },
+    "spot4": {
+      "badge": "AI MATERIAL CHAT",
+      "title": "Ask AI about materials any time, 24/7",
+      "desc": "Need to know corrosion resistance, density, or substitutes? Ask AI instantly with engineering-grade recommendations.",
+      "b1": "✓ Heat / chemical / corrosion resistance",
+      "b2": "✓ Substitutes + spec comparison + pricing",
+      "b3": "✓ Hardening / coating / surface treatment"
+    },
+    "spot5": {
+      "badge": "EXCEL EXPORT",
+      "title": "Export to Excel — edit, share, turn into a quote in seconds",
+      "desc": "Every calculation auto-saves to your Excel file — one sheet per quote with technical notes, totals, and stock sizes. Send straight to your customer or sales team in your shop's standard format.",
+      "b1": "✓ Auto new sheet on every save — never overwrites previous quotes",
+      "b2": "✓ Pretty formatting + aligned numbers + highlighted totals",
+      "b3": "✓ Open in Excel and add margin, discount, VAT, or your logo — instantly turn it into a customer-facing quote"
+    }
+  },
+  "Features": {
+    "title": "Everything you need to price CNC parts in one place",
+    "subtitle": "Built for Thai CNC shops — easy, accurate, and saved automatically",
+    "items": {
+      "step": {
+        "title": "Auto STEP File Analysis",
+        "desc": "Upload .step / .stp — OpenCASCADE computes volume + stock size automatically. No manual measuring required."
+      },
+      "pdfjpg": {
+        "title": "AI Reads PDF/JPG Drawings",
+        "desc": "Upload multiple PDF/JPG/PNG drawings at once. AI extracts Material, Stock Size, Coating, Tolerance, holes, etc."
+      },
+      "calc": {
+        "title": "Auto Cost Calculation",
+        "desc": "Material + CNC + Setup + Coating + Surface + Wire Cut calculated using your shop's formula. Precision Base 1-20 levels."
+      },
+      "excel": {
+        "title": "Save to Excel Instantly",
+        "desc": "Every calculation auto-saves to your Excel file in beautifully formatted sheets, with daily separation and highlighted totals."
+      },
+      "ai": {
+        "title": "Multi-AI Engine",
+        "desc": "Gemini primary + OpenRouter (Qwen, GLM, Claude, Llama) auto-fallback when quota exhausted."
+      },
+      "chat": {
+        "title": "Material AI Chat",
+        "desc": "Ask about Density, Material Spec, Hardening, Coating, Tolerance, Welding and more — answers in 2 seconds."
+      }
+    }
+  },
+  "Pricing": {
+    "title": "Pick the plan that fits you",
+    "subtitle": "Free covers the essentials forever — paid plans unlock advanced AI features (PDF/JPG batch, Multi-AI, AI Chat) and unlimited files",
+    "promoBadge": "🎉 Launch Promo — 50% off all plans",
+    "originalPrice": "Regular Price",
+    "perDay": "files/day",
+    "unlimited": "Unlimited",
+    "perMonth": "/mo",
+    "perYear": "/yr",
+    "lifetime": "Lifetime",
+    "billed": {
+      "monthly": "Billed monthly",
+      "yearly": "Billed yearly",
+      "lifetime": "One-time payment"
+    },
+    "tiers": {
+      "free": {
+        "name": "Free",
+        "tagline": "Try it out",
+        "cta": "Get Started Free"
+      },
+      "monthly": {
+        "name": "Monthly",
+        "tagline": "For continuous use",
+        "badge": "⭐ Popular",
+        "cta": "Subscribe Monthly"
+      },
+      "yearly": {
+        "name": "Yearly",
+        "tagline": "🎁 Pay 1 year, get 3 months free — 15 months total",
+        "badge": "💎 Best Value",
+        "cta": "Buy Yearly"
+      },
+      "lifetime": {
+        "name": "Lifetime",
+        "tagline": "Pay once, use forever",
+        "badge": "👑 Ultimate",
+        "cta": "Buy Lifetime"
+      }
+    },
+    "features": {
+      "title": "All Features",
+      "subtitleAll": "Included in every plan (Free / Monthly / Yearly / Lifetime)",
+      "subtitlePaid": "Paid plans only (Monthly / Yearly / Lifetime)",
+      "step": "📐 Upload STEP — auto volume + stock size analysis",
+      "pdfjpg": "🖼️ Upload PDF/JPG — AI drawing analysis (Multi-file)",
+      "ai": "🤖 AI extracts Material, Stock, Coating, Tolerance, holes",
+      "calc": "💰 Auto cost: Material + CNC + Setup + Coating",
+      "matdb": "📊 100+ materials database with density & pricing",
+      "excel": "📑 Auto-save to Excel with beautiful formatting",
+      "process": "🎨 Custom Coating + Surface + Wire Cut pricing",
+      "multiai": "🧠 Multi-AI: Gemini + OpenRouter (5 models)",
+      "chat": "💬 AI Chat for materials, spec, hardening, etc.",
+      "precision": "🔧 Precision Base 1-20 levels — adjustable multiplier",
+      "lang": "🌐 TH/EN bilingual support",
+      "zoom": "🔍 UI Zoom 50-200% — adjustable display size",
+      "support": "📞 Lifetime support + free version upgrades"
+    },
+    "diff": {
+      "title": "Plan Comparison",
+      "filesPerDay": "Files per day",
+      "desktop": "Desktop install (run local)",
+      "offline": "Offline use (no internet required)",
+      "duration": "Validity",
+      "license": "License Key (.dat) for offline use",
+      "forever": "Forever",
+      "days30": "30 days",
+      "days365": "12 mo + 3 mo free (15 months)",
+      "lifetime": "Lifetime"
+    }
+  },
+  "Footer": {
+    "company": "J Nac (Thailand) Co., Ltd.",
+    "address": "84 Moo 2, Soi Soontornvipark, Bangplee-Tamru Rd., Praeksamai, Mueang, Samut Prakan 10280",
+    "phone": "Tel: +66 8 1144 2000",
+    "email": "Email: info@cnccostify.cloud",
+    "rights": "© 2026 CNC Costify AI. All rights reserved.",
+    "links": {
+      "product": "Product",
+      "company": "Company",
+      "legal": "Legal",
+      "support": "Support"
+    }
+  },
+  "Common": {
+    "loading": "Loading...",
+    "error": "Error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "comingSoon": "Coming Soon"
+  },
+  "Auth": {
+    "signupTitle": "Sign Up Free",
+    "signupSubtitle": "Start free — use core features forever, no credit card required",
+    "loginTitle": "Sign In",
+    "loginSubtitle": "Welcome back — enter your email and password",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "At least 8 characters",
+    "name": "Full Name",
+    "namePlaceholder": "Your name",
+    "company": "Company (Optional)",
+    "companyPlaceholder": "Company name",
+    "phone": "Phone (Optional)",
+    "phonePlaceholder": "+66 8X XXX XXXX",
+    "signupBtn": "Sign Up Free",
+    "loginBtn": "Sign In",
+    "logoutBtn": "Sign Out",
+    "haveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
+    "loginLink": "Sign in",
+    "signupLink": "Sign up",
+    "forgotPassword": "Forgot password?",
+    "rememberMe": "Remember me for 30 days",
+    "continueWithGoogle": "Continue with Google",
+    "or": "or",
+    "agreeTerms": "By signing up you agree to our",
+    "termsLink": "Terms",
+    "and": "and",
+    "privacyLink": "Privacy Policy",
+    "errors": {
+      "invalid_email": "Invalid email",
+      "password_too_short": "Password must be at least 8 characters",
+      "email_already_registered": "Email already in use — try signing in",
+      "invalid_credentials": "Wrong email or password",
+      "rate_limit": "Too many attempts — wait 15 minutes",
+      "network": "Cannot reach server",
+      "unknown": "Something went wrong — try again",
+      "invalid_or_expired_token": "Link is invalid or expired",
+      "invalid_token": "Invalid link",
+      "token_expired": "Link expired — request a new one",
+      "missing_token": "Missing token",
+      "missing_email": "Please enter email"
+    }
+  },
+  "Verify": {
+    "title": "Verify Email",
+    "loading": "Verifying...",
+    "success": "✅ Email verified!",
+    "successMsg": "Your email has been verified — you're all set",
+    "goToAccount": "Go to Account →",
+    "errorTitle": "❌ Cannot verify",
+    "resendBtn": "Send new link",
+    "resendSuccess": "New link sent — check your inbox",
+    "missingToken": "Token not found in URL"
+  },
+  "Forgot": {
+    "title": "Forgot Password",
+    "subtitle": "Enter your email and we'll send you a reset link",
+    "submitBtn": "Send Reset Link",
+    "successTitle": "✅ Email sent",
+    "successMsg": "If this email is registered, you'll receive a reset link in 1-2 minutes",
+    "backToLogin": "← Back to sign in"
+  },
+  "Reset": {
+    "title": "Set New Password",
+    "subtitle": "Enter your new password (at least 8 characters)",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "submitBtn": "Save New Password",
+    "successTitle": "✅ Password updated",
+    "successMsg": "Your password has been updated — please sign in with the new password",
+    "passwordsMismatch": "Passwords don't match",
+    "missingToken": "Invalid link — please request a new one"
+  },
+  "Account": {
+    "title": "My Account",
+    "currentPlan": "Current Plan",
+    "validUntil": "Valid until",
+    "lifetime": "Lifetime",
+    "upgrade": "Upgrade",
+    "verified": "Email verified",
+    "notVerified": "Email not verified",
+    "memberSince": "Member since",
+    "lastLogin": "Last login"
+  },
+  "Feedback": {
+    "buttonLabel": "💡 Suggest a Feature",
+    "title": "💡 Suggest a Feature",
+    "subtitle": "Our product evolves with real user feedback — tell us what you'd like to see next",
+    "fields": {
+      "category": "Category",
+      "categoryPlaceholder": "Select a category",
+      "categories": {
+        "newFeature": "✨ New Feature",
+        "improvement": "🔧 Improve Existing Feature",
+        "bugReport": "🐛 Bug Report",
+        "uiux": "🎨 Design / UX",
+        "integration": "🔌 Integration",
+        "performance": "⚡ Performance / Speed",
+        "other": "💬 Other"
+      },
+      "title": "Short Title",
+      "titlePlaceholder": "e.g. Add DXF file support",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe the feature + how it would help your workflow...",
+      "importance": "Importance",
+      "importanceLevels": {
+        "1": "Nice to have",
+        "2": "Somewhat needed",
+        "3": "Strongly needed",
+        "4": "Required",
+        "5": "Critical"
+      },
+      "name": "Name (Optional)",
+      "namePlaceholder": "Your name or company",
+      "email": "Email (for follow-up)",
+      "emailPlaceholder": "you@example.com"
+    },
+    "send": "📤 Send Suggestion",
+    "sending": "Sending...",
+    "successTitle": "✅ Thank you!",
+    "successMsg": "We received your suggestion. Our team will review it and follow up if more details are needed.",
+    "errorMsg": "Something went wrong — please try again or email info@cnccostify.cloud directly",
+    "altMethod": "Or email us directly:",
+    "validation": {
+      "categoryRequired": "Please select a category",
+      "titleRequired": "Please enter a title",
+      "descriptionRequired": "Please enter a description",
+      "emailInvalid": "Invalid email"
+    }
+  }
+}
